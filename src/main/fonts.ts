@@ -2,7 +2,14 @@ import fs from 'node:fs';
 import type { FastifyInstance } from 'fastify';
 
 export function registerFontRoutes(server: FastifyInstance): void {
-	for (const name of ['archivo', 'inter', 'inter-medium', 'inter-semibold', 'space-mono', 'space-mono-bold']) {
+	for (const name of [
+		'archivo',
+		'inter',
+		'inter-medium',
+		'inter-semibold',
+		'space-mono',
+		'space-mono-bold',
+	]) {
 		const font = fs.readFileSync(new URL(`../ui/fonts/${name}.ttf`, import.meta.url));
 		server.get(`/ui/fonts/${name}.ttf`, async (_request, reply) =>
 			reply
