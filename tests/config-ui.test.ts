@@ -38,6 +38,8 @@ test('config UI registers one administrator and protects browser sessions', asyn
 		assert.equal(html.statusCode, 200);
 		assert.match(html.headers['content-type'] ?? '', /^text\/html/);
 		assert.match(html.headers['content-security-policy'] ?? '', /frame-ancestors 'none'/);
+		assert.match(html.headers['content-security-policy'] ?? '', /font-src 'self'/);
+		assert.equal((await server.inject('/ui/fonts/archivo.ttf')).statusCode, 200);
 		assert.equal(html.headers['cache-control'], 'no-store');
 		assert.match(html.body, /Create the administrator/);
 		assert.match(html.body, /autocomplete="new-password"/);
