@@ -17,14 +17,6 @@
 @font-face {
 	font-family: Inter;
 	font-style: normal;
-	font-weight: 500;
-	font-display: swap;
-	src: url('/ui/fonts/inter-medium.ttf') format('truetype');
-}
-
-@font-face {
-	font-family: Inter;
-	font-style: normal;
 	font-weight: 600;
 	font-display: swap;
 	src: url('/ui/fonts/inter-semibold.ttf') format('truetype');
@@ -69,6 +61,7 @@
 	--success: #23775f;
 	--success-soft: #dce5d8;
 	--danger: #b42318;
+	--danger-text: #ffffff;
 	--danger-soft: #f0ded6;
 	--focus: #46632d;
 	--radius: 0;
@@ -338,7 +331,7 @@ textarea {
 
 .button-danger:not(:disabled):hover {
 	background: var(--danger);
-	color: #ffffff;
+	color: var(--danger-text);
 }
 
 .button-small {
@@ -617,7 +610,7 @@ textarea {
 }
 
 .step-list li[data-state='running']::before {
-	border-color: var(--accent);
+	border-color: var(--highlight);
 	background: var(--accent-soft);
 }
 
@@ -834,6 +827,7 @@ td:first-child {
 		--success: #73d8b4;
 		--success-soft: #1d332d;
 		--danger: #ed6a5e;
+		--danger-text: #17171a;
 		--danger-soft: #362725;
 		--focus: #c3dba3;
 	}

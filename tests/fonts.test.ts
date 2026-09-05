@@ -7,14 +7,7 @@ test('UI fonts are served locally and unknown assets are not exposed', async () 
 	const server = Fastify();
 	registerFontRoutes(server);
 	try {
-		for (const name of [
-			'archivo',
-			'inter',
-			'inter-medium',
-			'inter-semibold',
-			'space-mono',
-			'space-mono-bold',
-		]) {
+		for (const name of ['archivo', 'inter', 'inter-semibold', 'space-mono', 'space-mono-bold']) {
 			const response = await server.inject(`/ui/fonts/${name}.ttf`);
 			assert.equal(response.statusCode, 200);
 			assert.equal(response.headers['content-type'], 'font/ttf');
