@@ -787,7 +787,8 @@ td:first-child {
 
 	input,
 	select,
-	textarea {
+	textarea,
+	.code-editor {
 		font-size: 1rem;
 	}
 
