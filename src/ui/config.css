@@ -1,5 +1,5 @@
 .config-shell {
-	max-width: 1100px;
+	max-width: 1320px;
 }
 
 .auth-card {
@@ -7,19 +7,19 @@
 	margin: 5vh auto 0;
 }
 
-.auth-card h2 {
+.auth-card h2,
+.setup-card h2 {
 	margin: 6px 0 8px;
-	font-size: 1.7rem;
+	font-family: var(--font-display);
+	font-size: 2rem;
+	font-weight: 900;
+	letter-spacing: -0.055em;
+	line-height: 1.1;
 }
 
 .setup-card {
 	width: min(100%, 560px);
 	margin: 5vh auto 0;
-}
-
-.setup-card h2 {
-	margin: 6px 0 8px;
-	font-size: 1.7rem;
 }
 
 .notice[hidden],
@@ -29,7 +29,7 @@
 
 #config-view {
 	display: grid;
-	gap: 18px;
+	gap: 16px;
 }
 
 .details-list {
@@ -47,14 +47,16 @@
 
 .details-list dt {
 	color: var(--muted);
-	font-size: 0.75rem;
+	font-family: var(--font-mono);
+	font-size: 0.68rem;
+	letter-spacing: 0.08em;
 	font-weight: 700;
 	text-transform: uppercase;
 }
 
 .details-list dd {
 	margin: 0;
-	font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+	font-family: var(--font-mono);
 	font-size: 0.84rem;
 	overflow-wrap: anywhere;
 }

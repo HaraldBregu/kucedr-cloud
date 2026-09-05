@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import { registerFontRoutes } from './fonts';
 import { fileURLToPath } from 'node:url';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { isAdminAuthenticated } from './admin/authenticated';
@@ -18,6 +19,7 @@ interface UiOptions {
 }
 
 export function registerUiRoutes(server: FastifyInstance, options: UiOptions): void {
+	registerFontRoutes(server);
 	const indexPath = fileURLToPath(new URL('../ui/index.html', import.meta.url));
 	const accessPath = fileURLToPath(new URL('../ui/access.html', import.meta.url));
 	const assetPath = (name: string): string =>

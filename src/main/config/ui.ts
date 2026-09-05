@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import { registerFontRoutes } from '../fonts';
 import type { FastifyInstance, FastifyReply } from 'fastify';
 import type { RequestLimiter } from '../oauth/limit';
 import type { OAuthIssuer } from '../oauth/issuer';
@@ -20,13 +21,14 @@ export function registerConfigurationUiRoutes(
 	issuer: OAuthIssuer,
 	limiter: RequestLimiter
 ): void {
+	registerFontRoutes(server);
 	const authenticate = createConfigurationAuthentication(store, adminToken, publicUrl, limiter);
 	const sendPage = (reply: FastifyReply) =>
 		reply
 			.header('cache-control', 'no-store')
 			.header(
 				'content-security-policy',
-				"default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
+				"default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
 			)
 			.header('referrer-policy', 'no-referrer')
 			.header('x-content-type-options', 'nosniff')
