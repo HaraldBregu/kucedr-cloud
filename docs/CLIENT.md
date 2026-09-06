@@ -11,12 +11,12 @@ An A2A client needs only:
 - its own Ed25519 private key; and
 - a short-lived OAuth access token obtained with that key.
 
-The client must never receive or send the model provider API key, `KUCEDR_CLOUD_ADMIN_TOKEN`, or `KUCEDR_CLOUD_CONFIG_KEY`. kucedr-cloud uses the provider API key internally when invoking the configured model. The administrator token is used only by a trusted operator to register or revoke clients.
+The client must never receive or send the model provider API key, `KUCEDR_CLOUD_ADMIN_TOKEN`, or `KUCEDR_CLOUD_CONFIG_KEY`. kucedr-cloud uses the provider API key internally when invoking the configured model. `KUCEDR_CLOUD_ADMIN_TOKEN` is used only during one-time browser registration of the administrator. The administrator registers and revokes clients through the signed-in browser application; calling agents never use its password or session cookie. See [API boundaries](USAGE.md#understand-the-api-boundaries) for the browser-session model and its network-isolation limits.
 
 ## Interaction flow
 
 1. The client fetches the public Agent Card.
-2. An administrator registers the client's Ed25519 public key once.
+2. An administrator registers the client's Ed25519 public key once in the browser application.
 3. The client signs a one-time `private_key_jwt` assertion with its private key.
 4. The client exchanges the assertion for a five-minute OAuth bearer token.
 5. The client sends A2A requests with that bearer token and `A2A-Version: 1.0`.
@@ -173,20 +173,9 @@ Validate that discovered URLs use the expected HTTPS origin before sending crede
 
 Generate an Ed25519 key pair in the client environment. Keep the private key there and provide only the public JWK to a trusted kucedr-cloud administrator.
 
-The administrator registers it with:
+The administrator signs in at `/config`, enters a client name and the public JWK under **Registered clients**, and chooses **Register client**. They then return the **Client ID** shown in the table to the calling agent. The administrator can later choose **Revoke** on the same row to remove the client's access.
 
-```http
-POST /config/clients
-Authorization: Bearer <KUCEDR_CLOUD_ADMIN_TOKEN>
-Content-Type: application/json
-
-{
-  "name": "calling-agent",
-  "publicKeyJwk": { "kty": "OKP", "crv": "Ed25519", "x": "..." }
-}
-```
-
-The response includes the `clientId` needed during token acquisition. This registration endpoint is administrative: an A2A client must not retain the administrator token.
+The configuration and login APIs belong to the browser application and reject bearer credentials. External clients use only public discovery, the A2A OAuth token endpoint, and authenticated A2A operations. For the complete administrator workflow, see [Register a calling agent](USAGE.md#register-a-calling-agent).
 
 ## 3. Obtain an access token
 

@@ -1,6 +1,6 @@
 # Using kucedr-cloud over A2A
 
-This guide shows how to configure kucedr-cloud, register a calling agent, obtain a short-lived OAuth token, send prompts through A2A, continue a conversation, and manage tasks. kucedr-cloud provides a focused browser interface at `/config` and an administrator-only configuration API; every agent operation uses A2A 1.0 HTTP+JSON.
+This guide shows how to configure kucedr-cloud, register a calling agent, obtain a short-lived OAuth token, send prompts through A2A, continue a conversation, and manage tasks. kucedr-cloud provides a browser interface at `/config` for administration; external applications use A2A 1.0 HTTP+JSON for every agent operation.
 
 ## Prerequisites
 
@@ -55,74 +55,47 @@ The HTTP endpoint is ready when Compose reports it as healthy. The health check 
 
 ## Understand the API boundaries
 
-kucedr-cloud exposes four distinct REST surfaces:
+kucedr-cloud separates browser administration from machine access:
 
-| Surface                   | Authentication                       | Purpose                                                                            |
-| ------------------------- | ------------------------------------ | ---------------------------------------------------------------------------------- |
-| `/.well-known/*`          | Public                               | Agent Card, OAuth metadata, protected-resource metadata, and signing-key discovery |
-| `/a2a/oauth/token`        | Registered Ed25519 `private_key_jwt` | Issue a short-lived A2A access token                                               |
-| `/a2a` and `/a2a/*`       | A2A bearer token with `a2a.invoke`   | Send messages and manage caller-owned tasks                                        |
-| `/config` (browser)       | Administrator username and password  | Register or sign in, then configure the provider and calling-agent public keys      |
-| `/config` and `/config/*` | Administrator bearer token           | Automate provider and calling-agent configuration                                  |
+| Surface                   | Authentication                     | Purpose                                                                          |
+| ------------------------- | ---------------------------------- | -------------------------------------------------------------------------------- |
+| `/.well-known/*`           | Public                             | Agent Card, OAuth metadata, protected-resource metadata, and signing-key discovery |
+| `/a2a/oauth/token`         | Registered Ed25519 `private_key_jwt` | Issue a short-lived A2A access token                                              |
+| `/a2a` and `/a2a/*`        | A2A bearer token with `a2a.invoke`   | Send messages and manage caller-owned tasks                                       |
+| `/config` and `/config/*`  | Administrator browser session      | Sign in and manage the provider and calling-agent public keys                      |
 
-The administrator token cannot invoke A2A, and an A2A token cannot access `/config`. `KUCEDR_CLOUD_ADMIN_TOKEN` is reserved for trusted configuration API automation; browser registration does not use it. `KUCEDR_CLOUD_CONFIG_KEY` encrypts the administrator credentials and provider key at rest. Both remain deployment secrets and are not managed through `/config`.
+The configuration and authentication APIs support the built-in browser application. They reject every `Authorization` header, including administrator and A2A bearer tokens. Configuration data requires a valid session cookie. API reads require same-origin request metadata; registration, login, logout, and configuration changes require the configured `Origin`. Authenticated changes also require the session's CSRF token. The browser supplies these automatically.
+
+`KUCEDR_CLOUD_ADMIN_TOKEN` is the one-time setup credential for creating the administrator. It cannot authorize configuration changes or invoke A2A. `KUCEDR_CLOUD_CONFIG_KEY` continues to encrypt administrator credentials and provider secrets at rest. Both remain deployment secrets.
+
+Origin and Fetch Metadata checks protect browser requests against cross-site use. They do not establish cryptographic application identity: a non-browser client can spoof these headers, and a client holding administrator credentials or a stolen session can imitate the browser flow. This change does not make the administration routes unreachable over the network. Strict external network isolation requires separate private access to administration, enforced by deployment network or reverse-proxy rules while keeping A2A and its discovery and token endpoints available to calling agents.
 
 ## Create the administrator
 
-Open `https://agent.example.com/config` in a browser. On the first visit, choose a username and create a password of at least 12 characters. Registration is available only once. The next setup page requires the model provider, model ID, and API key before the configuration dashboard opens. Later visits show the username and password login page.
+Open `https://agent.example.com/config` in a browser. On the first visit, enter the value of `KUCEDR_CLOUD_ADMIN_TOKEN` in **Setup token**, choose a username, and create a password of at least 12 characters. The form submits the setup credential as `setupToken`; it is never embedded in the page. Registration requires this secret and is available only once. The setup token cannot create another administrator or replace an existing account after registration.
 
-Browser sessions last 12 hours, use an HTTP-only same-site cookie, and are revoked when you log out. Passwords and provider API keys are never stored in browser storage. Because registration has no bootstrap credential, complete it on a private network before exposing a new instance to untrusted traffic. The first visitor to an unregistered public instance can create its administrator account.
+The next setup page requires the model provider, model ID, and API key before the configuration dashboard opens. Later visits use the administrator username and password, without the setup token. Existing administrator accounts and sessions remain valid.
+
+Browser sessions last 12 hours, use an HTTP-only same-site cookie, and are revoked when you log out. Passwords, setup tokens, and provider API keys are never stored in browser storage. Keep the deployment setup token out of calling-agent environments.
 
 ## Configure the model provider
 
-The browser setup page is the primary way to configure the provider. Provider, model, API key, base URL, and model-option environment fallbacks are not supported. To automate configuration after administrator registration, set administrator variables only in a trusted operator shell, then write the provider key:
+Configure the provider in the browser after signing in at `/config`. Provider, model, API key, base URL, and model-option environment fallbacks are not supported.
 
-```bash
-export KUCEDR_CLOUD_URL='https://agent.example.com'
-export KUCEDR_CLOUD_ADMIN_TOKEN='<first-generated-value>'
+1. On the initial setup page, select **Provider**, enter the model ID and API key, then choose **Finish setup**.
+2. Confirm that the dashboard's **Provider** summary shows the selected provider and model.
+3. To update the model later, edit the **Provider** form and choose **Save provider**. Leave the API key blank to retain the saved key for the same provider. Changing providers requires a new API key.
+4. To remove the configuration, choose **Remove provider** and confirm. New agent runs remain unavailable until another provider is configured.
 
-curl --fail-with-body -X PUT "$KUCEDR_CLOUD_URL/config/provider" \
-  -H "Authorization: Bearer $KUCEDR_CLOUD_ADMIN_TOKEN" \
-  -H 'Content-Type: application/json' \
-  --data '{
-    "provider": "openai",
-    "model": "<current-model-id>",
-    "apiKey": "<provider-api-key>"
-  }'
-```
-
-The response contains only provider metadata and `hasApiKey`; it never returns the key. kucedr-cloud encrypts the provider configuration with `KUCEDR_CLOUD_CONFIG_KEY` before writing it to the data volume.
-
-Inspect the current provider state, registered clients, and OAuth coordinates from the trusted operator shell:
-
-```bash
-curl --fail-with-body "$KUCEDR_CLOUD_URL/config" \
-  -H "Authorization: Bearer $KUCEDR_CLOUD_ADMIN_TOKEN"
-```
-
-To change only the model for the currently configured provider, omit `apiKey`; kucedr-cloud keeps the encrypted key already stored for that provider:
-
-```bash
-curl --fail-with-body -X PUT "$KUCEDR_CLOUD_URL/config/provider" \
-  -H "Authorization: Bearer $KUCEDR_CLOUD_ADMIN_TOKEN" \
-  -H 'Content-Type: application/json' \
-  --data '{"provider":"openai","model":"<new-model-id>"}'
-```
-
-Changing to a different provider requires that provider's API key. To remove the provider configuration:
-
-```bash
-curl --fail-with-body -X DELETE "$KUCEDR_CLOUD_URL/config/provider" \
-  -H "Authorization: Bearer $KUCEDR_CLOUD_ADMIN_TOKEN"
-```
-
-Removing the provider prevents new agent runs until another provider is configured.
+The dashboard also displays registered clients and OAuth connection details. The API key is never returned to the browser; kucedr-cloud encrypts it with `KUCEDR_CLOUD_CONFIG_KEY` before writing it to the data volume. Administrator bearer-token automation is no longer supported.
 
 ## Verify discovery
 
-Fetch the public Agent Card and OAuth documents before registering or requesting a token:
+Set the public URL in the calling-agent shell, then fetch the Agent Card and OAuth documents before requesting a token:
 
 ```bash
+export KUCEDR_CLOUD_URL='https://agent.example.com'
+
 curl --fail-with-body "$KUCEDR_CLOUD_URL/.well-known/agent-card.json"
 curl --fail-with-body "$KUCEDR_CLOUD_URL/.well-known/oauth-authorization-server"
 curl --fail-with-body "$KUCEDR_CLOUD_URL/.well-known/oauth-protected-resource/a2a"
@@ -167,40 +140,16 @@ writeFileSync('client-public.jwk', JSON.stringify(publicKey.export({ format: 'jw
 
 Transfer only `client-public.jwk` to the trusted operator environment. `client-private.jwk` must remain on the calling-agent host and should be stored in a platform keystore or secret manager when available. The script refuses to overwrite an existing key file.
 
-Create `register-client.mjs` in the trusted operator environment:
+Sign in to `/config` in the browser and locate **Registered clients**. Enter a descriptive **Client name**, paste the contents of `client-public.jwk` into **Ed25519 public JWK**, and choose **Register client**. Confirm the new entry appears in the table, then copy its **Client ID**.
 
-```js
-import { readFileSync } from 'node:fs';
-
-const response = await fetch(`${process.env.KUCEDR_CLOUD_URL}/config/clients`, {
-	method: 'POST',
-	headers: {
-		Authorization: `Bearer ${process.env.KUCEDR_CLOUD_ADMIN_TOKEN}`,
-		'Content-Type': 'application/json',
-	},
-	body: JSON.stringify({
-		name: 'my-calling-agent',
-		publicKeyJwk: JSON.parse(readFileSync('client-public.jwk', 'utf8')),
-	}),
-});
-if (!response.ok) throw new Error(await response.text());
-console.log(await response.text());
-```
-
-Run the registration from the operator environment. The response contains the new `clientId`, creation time, name, and public-key thumbprint, but no key material:
-
-```bash
-node register-client.mjs
-```
-
-Return the `clientId` and public kucedr-cloud URL to the calling-agent environment through a trusted channel:
+Return the client ID and public kucedr-cloud URL to the calling-agent environment through a trusted channel:
 
 ```bash
 export KUCEDR_CLOUD_URL='https://agent.example.com'
-export KUCEDR_CLOUD_CLIENT_ID='<returned-clientId>'
+export KUCEDR_CLOUD_CLIENT_ID='<registered-client-id>'
 ```
 
-The administrator can confirm the registration with authenticated `GET /config`. Registering the same public key again creates a new client identity; it does not restore access to tasks owned by a deleted identity.
+Registering the same public key again creates a new client identity; it does not restore access to tasks owned by a deleted identity. Calling agents do not receive the administrator password, setup token, or browser session.
 
 ## Obtain an A2A access token
 
@@ -435,14 +384,7 @@ Cancellation can fail if the task is already terminal or is no longer active.
 
 ## Revoke a calling agent
 
-Delete the client registration from the trusted operator environment:
-
-```bash
-export REVOKED_CLIENT_ID='<client-id>'
-
-curl --fail-with-body -X DELETE "$KUCEDR_CLOUD_URL/config/clients/$REVOKED_CLIENT_ID" \
-  -H "Authorization: Bearer $KUCEDR_CLOUD_ADMIN_TOKEN"
-```
+Sign in to `/config`, find the client in **Registered clients**, and choose **Revoke**. Confirm the prompt and verify that its row disappears from the table.
 
 Subsequent requests using that client's access tokens are rejected immediately. Revocation does not terminate an already admitted HTTP request, active stream, or running task. Deleting a client also makes its existing tasks and conversations inaccessible through the API; the stored records remain until their normal retention cleanup, and registering a new client does not inherit them.
 
@@ -563,18 +505,17 @@ Inspect the container log:
 docker compose logs app
 ```
 
-Common causes are an administrator token shorter than 32 bytes, a configuration key that does not encode exactly 32 bytes, replacing the key that encrypted the existing `secure-config.json`, or an invalid `KUCEDR_CLOUD_PUBLIC_URL`. Restore the exact backed-up configuration key when persisted data already exists. Production public URLs must use HTTPS and must not contain a path, query, credentials, or fragment.
+Common causes are a deployment setup token shorter than 32 bytes, a configuration key that does not encode exactly 32 bytes, replacing the key that encrypted the existing `secure-config.json`, or an invalid `KUCEDR_CLOUD_PUBLIC_URL`. Restore the exact backed-up configuration key when persisted data already exists. Production public URLs must use HTTPS and must not contain a path, query, credentials, or fragment.
 
 ### An A2A request returns `401 Unauthorized`
 
-Acquire a fresh token with `get-token.mjs` and confirm that the request uses `Authorization: Bearer <token>`. From the trusted operator shell, check that the client still exists with:
+Acquire a fresh token with `get-token.mjs` and confirm that the request uses `Authorization: Bearer <token>`. Ask the administrator to sign in to `/config` and verify that the client still appears in **Registered clients**. An A2A access token cannot perform this configuration check.
 
-```bash
-curl --fail-with-body "$KUCEDR_CLOUD_URL/config" \
-  -H "Authorization: Bearer $KUCEDR_CLOUD_ADMIN_TOKEN"
-```
+### The browser cannot register or configure the server
 
-An A2A access token cannot perform this configuration check.
+Open `/config` on the exact origin in `KUCEDR_CLOUD_PUBLIC_URL`. On a new installation, **Setup token** must match `KUCEDR_CLOUD_ADMIN_TOKEN`; after registration, sign in with the administrator username and password. An existing administrator account cannot be replaced with the setup token.
+
+A `401` response can mean the browser session expired or an `Authorization` header was supplied. Administrator bearer-token scripts must use the browser workflow instead. A `403` response means the application origin, Fetch Metadata, or CSRF check failed. Reload the page to refresh its session state and verify that the reverse proxy preserves the browser's `Origin` and `Sec-Fetch-Site` headers. Cross-origin administration is unsupported.
 
 ### The token endpoint returns `invalid_client`
 
@@ -598,4 +539,4 @@ Wait for the number of seconds in `Retry-After` before retrying. Repeated immedi
 
 ### The task fails after reaching `WORKING`
 
-The A2A response intentionally hides internal provider errors. Use authenticated `GET /config` to verify the configured provider and model, then check the provider API key, model availability, account limits, and provider status. `docker compose logs app` is useful for server lifecycle failures but may not contain the underlying model-run error.
+The A2A response intentionally hides internal provider errors. Sign in to `/config` and check the **Provider** summary to verify the configured provider and model, then check the provider API key, model availability, account limits, and provider status. `docker compose logs app` is useful for server lifecycle failures but may not contain the underlying model-run error.
