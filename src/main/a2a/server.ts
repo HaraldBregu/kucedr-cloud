@@ -38,6 +38,7 @@ export async function createA2aServer(
 				'req.body.apiKey',
 				'req.body.client_assertion',
 				'req.body.password',
+				'req.body.setupToken',
 			],
 		},
 	});
@@ -55,12 +56,11 @@ export async function createA2aServer(
 	registerConfigurationUiRoutes(
 		server,
 		store,
-		config.adminToken,
 		config.publicUrl,
 		issuer,
 		limiter
 	);
-	registerConfigurationRoutes(server, store, config.adminToken, config.publicUrl, limiter);
+	registerConfigurationRoutes(server, store, config.publicUrl, limiter);
 	await registerA2aRoutes(
 		server,
 		agent,

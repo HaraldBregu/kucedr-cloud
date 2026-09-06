@@ -32,6 +32,18 @@
 				</p>
 				<form id="register-form">
 					<div class="field">
+						<label for="register-setup-token">Setup token</label>
+						<input
+							id="register-setup-token"
+							name="setupToken"
+							type="password"
+							autocomplete="off"
+							maxlength="4096"
+							required
+						/>
+						<p class="helper">Enter the deployment setup token to create the administrator.</p>
+					</div>
+					<div class="field">
 						<label for="register-username">Username</label>
 						<input
 							id="register-username"

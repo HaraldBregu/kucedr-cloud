@@ -1,6 +1,8 @@
 import { randomBytes } from 'node:crypto';
-import type { FastifyInstance, FastifyRequest } from 'fastify';
+import type { FastifyInstance } from 'fastify';
 import type { RequestLimiter } from '../oauth/limit';
+import { createApplicationAuthentication } from './application';
+import { createConfigurationAuthentication } from './auth';
 import { clearConfigurationCookie, setConfigurationCookie } from './cookie';
 import { equalText } from './equal';
 import { hashPassword } from './password';
@@ -34,10 +36,11 @@ export function registerConfigurationAuthenticationRoutes(
 	publicUrl: string,
 	limiter: RequestLimiter
 ): void {
-	server.get('/config/auth/status', async (request, reply) => {
+	const application = { onRequest: createApplicationAuthentication(publicUrl) };
+	const authenticate = createConfigurationAuthentication(store, publicUrl, limiter);
+	server.get('/config/auth/status', application, async (request, reply) => {
 		const administrator = store.administrator();
-		const principal = configurationPrincipal(request, store, adminToken, publicUrl);
-		const session = principal?.method === 'ui-session' ? principal : undefined;
+		const session = configurationPrincipal(request, store, publicUrl);
 		return reply.header('cache-control', 'no-store').send({
 			registered: Boolean(administrator),
 			authenticated: Boolean(session),
@@ -46,20 +49,31 @@ export function registerConfigurationAuthenticationRoutes(
 		});
 	});
 
-	server.post<{ Body: CredentialsBody }>(
+	server.post<{ Body: CredentialsBody & { setupToken: string } }>(
 		'/config/auth/register',
-		{ schema: credentialsSchema },
+		{
+			...application,
+			schema: {
+				body: {
+					...credentialsSchema.body,
+					required: [...credentialsSchema.body.required, 'setupToken'],
+					properties: {
+						...credentialsSchema.body.properties,
+						setupToken: { type: 'string', minLength: 1, maxLength: 4096 },
+					},
+				},
+			},
+		},
 		async (request, reply) => {
 			reply.header('cache-control', 'no-store');
 			if (!limiter.consume(`config-register:${request.ip}`, 5, 60_000)) {
 				return reply.code(429).header('retry-after', '60').send({ error: 'Too Many Requests' });
 			}
-			const bearer = equalText(request.headers.authorization ?? '', `Bearer ${adminToken}`);
-			if (!bearer && request.headers.origin !== publicUrl) {
-				return reply.code(401).header('www-authenticate', 'Bearer').send({ error: 'Unauthorized' });
-			}
 			if (store.administrator())
 				return reply.code(409).send({ error: 'Registration is complete.' });
+			if (!equalText(request.body.setupToken, adminToken)) {
+				return reply.code(401).send({ error: 'Invalid setup token.' });
+			}
 			const username = normalizeUsername(request.body.username);
 			if (!username) {
 				return reply
@@ -96,7 +110,7 @@ export function registerConfigurationAuthenticationRoutes(
 
 	server.post<{ Body: CredentialsBody }>(
 		'/config/auth/session',
-		{ schema: credentialsSchema },
+		{ ...application, schema: credentialsSchema },
 		async (request, reply) => {
 			reply.header('cache-control', 'no-store');
 			if (!limiter.consume(`config-login:${request.ip}`, 10, 60_000)) {
@@ -122,33 +136,13 @@ export function registerConfigurationAuthenticationRoutes(
 		}
 	);
 
-	server.delete('/config/auth/session', async (request, reply) => {
-		reply.header('cache-control', 'no-store');
-		const principal = configurationPrincipal(request, store, adminToken, publicUrl);
-		if (!principal || principal.method !== 'ui-session') {
+	server.delete('/config/auth/session', { onRequest: authenticate }, async (request, reply) => {
+		const principal = configurationPrincipal(request, store, publicUrl);
+		if (!principal) {
 			return reply.code(401).send({ error: 'Unauthorized' });
-		}
-		if (!validCsrf(request, principal.token, store, publicUrl)) {
-			return reply.code(403).send({ error: 'Forbidden' });
 		}
 		store.deleteSession(sessionHash(principal.token));
 		request.log.info({ event: 'config.session.deleted', username: principal.subject });
 		return reply.code(204).header('set-cookie', clearConfigurationCookie(publicUrl)).send();
 	});
-}
-
-function validCsrf(
-	request: FastifyRequest,
-	token: string,
-	store: ConfigurationStore,
-	publicUrl: string
-): boolean {
-	const administrator = store.administrator();
-	const submitted = request.headers['x-kucedr-cloud-csrf'];
-	return Boolean(
-		administrator &&
-		request.headers.origin === publicUrl &&
-		typeof submitted === 'string' &&
-		equalText(submitted, csrfToken(token, administrator))
-	);
 }

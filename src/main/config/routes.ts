@@ -19,11 +19,10 @@ interface ClientBody {
 export function registerConfigurationRoutes(
 	server: FastifyInstance,
 	store: ConfigurationStore,
-	adminToken: string,
 	publicUrl: string,
 	limiter: RequestLimiter
 ): void {
-	const authenticate = createConfigurationAuthentication(store, adminToken, publicUrl, limiter);
+	const authenticate = createConfigurationAuthentication(store, publicUrl, limiter);
 	const options = { onRequest: authenticate };
 	server.put<{ Body: ProviderBody }>(
 		'/config/provider',
