@@ -8,13 +8,12 @@ import type { ConfigurationStore } from './store';
 
 export function createConfigurationServer(
 	store: ConfigurationStore,
-	setupToken: string,
 	appUrl: string,
 	issuer: OAuthIssuer
 ) {
 	const server = createHttpServer();
 	const limiter = new RequestLimiter();
-	registerConfigurationAuthenticationRoutes(server, store, setupToken, appUrl, limiter);
+	registerConfigurationAuthenticationRoutes(server, store, appUrl, limiter);
 	registerConfigurationUiRoutes(server, store, appUrl, issuer, limiter);
 	registerConfigurationRoutes(server, store, appUrl, limiter);
 	return server;

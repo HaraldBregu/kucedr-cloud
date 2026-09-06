@@ -3,7 +3,6 @@ import { decodeConfigurationKey } from '../config/key';
 import { resolvePublicUrl } from './public_url';
 
 export interface SecureA2aConfig {
-	adminToken: string;
 	appUrl: string;
 	dataDirectory: string;
 	encryptionKey: Buffer;
@@ -13,7 +12,6 @@ export interface SecureA2aConfig {
 }
 
 interface SecureA2aConfigInput {
-	adminToken?: string | null;
 	appUrl?: string | null;
 	configurationKey?: string | null;
 	dataDirectory: string;
@@ -21,10 +19,6 @@ interface SecureA2aConfigInput {
 }
 
 export function resolveSecureA2aConfig(input: SecureA2aConfigInput): SecureA2aConfig {
-	const adminToken =
-		input.adminToken === undefined
-			? process.env.KUCEDR_CLOUD_ADMIN_TOKEN?.trim()
-			: input.adminToken?.trim();
 	const appUrl =
 		input.appUrl === undefined
 			? process.env.KUCEDR_CLOUD_APP_URL?.trim() || 'http://127.0.0.1:3001'
@@ -37,9 +31,6 @@ export function resolveSecureA2aConfig(input: SecureA2aConfigInput): SecureA2aCo
 		input.publicUrl === undefined
 			? process.env.KUCEDR_CLOUD_PUBLIC_URL?.trim()
 			: input.publicUrl?.trim();
-	if (!adminToken || Buffer.byteLength(adminToken, 'utf8') < 32) {
-		throw new Error('KUCEDR_CLOUD_ADMIN_TOKEN must contain at least 32 UTF-8 bytes.');
-	}
 	if (!rawKey) throw new Error('KUCEDR_CLOUD_CONFIG_KEY is required.');
 	if (!publicUrl) throw new Error('KUCEDR_CLOUD_PUBLIC_URL is required.');
 	if (!appUrl) throw new Error('KUCEDR_CLOUD_APP_URL is required.');
@@ -50,7 +41,6 @@ export function resolveSecureA2aConfig(input: SecureA2aConfigInput): SecureA2aCo
 	}
 	const dataDirectory = path.resolve(input.dataDirectory);
 	return {
-		adminToken,
 		appUrl: resolvedAppUrl,
 		dataDirectory,
 		encryptionKey: decodeConfigurationKey(rawKey),

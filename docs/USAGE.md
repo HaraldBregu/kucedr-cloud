@@ -24,23 +24,21 @@ cp .env.example .env
 chmod 600 .env
 ```
 
-Generate two independent 32-byte values:
+Generate a 32-byte configuration encryption key:
 
 ```bash
 openssl rand -hex 32
-openssl rand -hex 32
 ```
 
-Copy them into `.env`:
+Copy the key into `.env`:
 
 ```dotenv
 KUCEDR_CLOUD_PUBLIC_URL=https://agent.example.com
 KUCEDR_CLOUD_APP_URL=http://127.0.0.1:3001
-KUCEDR_CLOUD_ADMIN_TOKEN=<first-generated-value>
-KUCEDR_CLOUD_CONFIG_KEY=<second-generated-value>
+KUCEDR_CLOUD_CONFIG_KEY=<generated-value>
 ```
 
-`KUCEDR_CLOUD_PUBLIC_URL` is the public A2A origin only. Do not add `/a2a` to it. Production public URLs must use HTTPS; client assertions and A2A access tokens must not cross an unencrypted network. `KUCEDR_CLOUD_APP_URL` is the separate browser application origin, defaulting to `http://127.0.0.1:3001`; it must differ from `KUCEDR_CLOUD_PUBLIC_URL`. Loopback HTTP is suitable for local administration or access through an encrypted SSH tunnel. Keep both generated secrets out of calling-agent environments.
+`KUCEDR_CLOUD_PUBLIC_URL` is the public A2A origin only. Do not add `/a2a` to it. Production public URLs must use HTTPS; client assertions and A2A access tokens must not cross an unencrypted network. `KUCEDR_CLOUD_APP_URL` is the separate browser application origin, defaulting to `http://127.0.0.1:3001`; it must differ from `KUCEDR_CLOUD_PUBLIC_URL`. Loopback HTTP is suitable for local administration or access through an encrypted SSH tunnel. Keep the configuration key out of calling-agent environments.
 
 Back up the exact `KUCEDR_CLOUD_CONFIG_KEY` in a protected secret manager before starting kucedr-cloud. It encrypts the persisted provider and token-signing secrets. Losing or replacing it makes the existing secure configuration unreadable and prevents startup. Online rotation of this key is not currently supported.
 
@@ -71,7 +69,7 @@ The private application listener uses port 3001 by default. Native startup binds
 
 The configuration and authentication APIs support the built-in browser application. They reject every `Authorization` header, including administrator and A2A bearer tokens. Configuration data requires a valid session cookie. API reads require same-origin request metadata; registration, login, logout, and configuration changes require an `Origin` matching `KUCEDR_CLOUD_APP_URL`. Authenticated changes also require the session's CSRF token. The browser supplies these automatically.
 
-`KUCEDR_CLOUD_ADMIN_TOKEN` is the one-time setup credential for creating the administrator. It cannot authorize configuration changes or invoke A2A. `KUCEDR_CLOUD_CONFIG_KEY` continues to encrypt administrator credentials and provider secrets at rest. Both remain deployment secrets.
+`KUCEDR_CLOUD_CONFIG_KEY` encrypts administrator credentials and provider secrets at rest and remains a deployment secret. Administrator registration requires only a chosen username and password.
 
 The listener split prevents public A2A callers from reaching administration routes. Origin, Fetch Metadata, and CSRF checks additionally protect the private browser flow against cross-site use. These headers do not establish cryptographic application identity: a non-browser client with access to the private listener can spoof them. Administrator credentials and session cookies remain secrets, and exposing the private listener publicly would remove the network boundary.
 
@@ -85,11 +83,11 @@ ssh -N -L 3001:127.0.0.1:3001 user@server
 
 Then open the same local browser URL. The SSH connection encrypts traffic between your computer and the remote server. A private HTTPS proxy may instead use the origin configured in `KUCEDR_CLOUD_APP_URL`.
 
-On the first visit, enter the value of `KUCEDR_CLOUD_ADMIN_TOKEN` in **Setup token**, choose a username, and create a password of at least 12 characters. The form submits the setup credential as `setupToken`; it is never embedded in the page. Registration requires this secret and is available only once. The setup token cannot create another administrator or replace an existing account after registration.
+On the first visit, choose a username and create a password of at least 12 characters. No administrator token is needed. Registration is available only once; after an administrator exists, another account cannot be created or used to replace it.
 
-Registration signs you in and opens the dashboard immediately. Choose any nonblank username up to 100 characters, including Unicode, spaces, and punctuation; sign-in ignores case and surrounding whitespace. The left sidebar opens separate **Dashboard**, **Clients**, **Provider**, and **A2A Config** pages. Provider setup is optional until you run an agent. See [Application flow](FLOW.md) for the page map and interaction states. Later visits use the administrator username and password, without the setup token. Existing administrator accounts and saved configuration are retained; sign in on the private application origin after switching from the previous shared listener.
+Registration signs you in and opens the dashboard immediately. Choose any nonblank username up to 100 characters, including Unicode, spaces, and punctuation; sign-in ignores case and surrounding whitespace. The left sidebar opens separate **Dashboard**, **Clients**, **Provider**, and **A2A Config** pages. Provider setup is optional until you run an agent. See [Application flow](FLOW.md) for the page map and interaction states. Later visits use the administrator username and password. Existing administrator accounts and saved configuration are retained; sign in on the private application origin after switching from the previous shared listener.
 
-Browser sessions last 12 hours, use an HTTP-only same-site cookie, and are revoked when you log out. Passwords, setup tokens, and provider API keys are never stored in browser storage. Keep the deployment setup token out of calling-agent environments.
+Browser sessions last 12 hours, use an HTTP-only same-site cookie, and are revoked when you log out. Passwords and provider API keys are never stored in browser storage.
 
 ## Configure the model provider
 
@@ -162,7 +160,7 @@ export KUCEDR_CLOUD_URL='https://agent.example.com'
 export KUCEDR_CLOUD_CLIENT_ID='<registered-client-id>'
 ```
 
-Registering the same public key again creates a new client identity; it does not restore access to tasks owned by a deleted identity. Calling agents do not receive the administrator password, setup token, or browser session.
+Registering the same public key again creates a new client identity; it does not restore access to tasks owned by a deleted identity. Calling agents do not receive the administrator password or browser session.
 
 ## Obtain an A2A access token
 
@@ -504,7 +502,7 @@ Do not use `docker compose down --volumes` unless you intend to delete the works
 
 ### Compose reports a missing variable
 
-`KUCEDR_CLOUD_PUBLIC_URL`, `KUCEDR_CLOUD_ADMIN_TOKEN`, and `KUCEDR_CLOUD_CONFIG_KEY` must have non-empty values. Provider, model, and API key values are entered on the **Provider** page after administrator registration. Check the file, then run:
+`KUCEDR_CLOUD_PUBLIC_URL` and `KUCEDR_CLOUD_CONFIG_KEY` must have non-empty values. Provider, model, and API key values are entered on the **Provider** page after administrator registration. Check the file, then run:
 
 ```bash
 docker compose config --quiet
@@ -518,7 +516,7 @@ Inspect the container log:
 docker compose logs app
 ```
 
-Common causes are a deployment setup token shorter than 32 bytes, a configuration key that does not encode exactly 32 bytes, replacing the key that encrypted the existing `secure-config.json`, an invalid `KUCEDR_CLOUD_PUBLIC_URL` or `KUCEDR_CLOUD_APP_URL`, or configuring both origins to the same value. Restore the exact backed-up configuration key when persisted data already exists. Production public URLs must use HTTPS and must not contain a path, query, credentials, or fragment.
+Common causes are a configuration key that does not encode exactly 32 bytes, replacing the key that encrypted the existing `secure-config.json`, an invalid `KUCEDR_CLOUD_PUBLIC_URL` or `KUCEDR_CLOUD_APP_URL`, or configuring both origins to the same value. Restore the exact backed-up configuration key when persisted data already exists. Production public URLs must use HTTPS and must not contain a path, query, credentials, or fragment.
 
 ### An A2A request returns `401 Unauthorized`
 
@@ -526,7 +524,7 @@ Acquire a fresh token with `get-token.mjs` and confirm that the request uses `Au
 
 ### The browser cannot register or configure the server
 
-Open `/config` on the exact origin in `KUCEDR_CLOUD_APP_URL`, normally `http://127.0.0.1:3001`. For a remote server, confirm the SSH tunnel is active. A `404` from the public A2A origin is expected because administration routes are absent there. On a new installation, **Setup token** must match `KUCEDR_CLOUD_ADMIN_TOKEN`; after registration, sign in with the administrator username and password. An existing administrator account cannot be replaced with the setup token.
+Open `/config` on the exact origin in `KUCEDR_CLOUD_APP_URL`, normally `http://127.0.0.1:3001`. For a remote server, confirm the SSH tunnel is active. A `404` from the public A2A origin is expected because administration routes are absent there. On a new installation, create the administrator with a username and password; after registration, sign in with those credentials. Registration is closed once the administrator exists.
 
 A `401` response can mean the browser session expired or an `Authorization` header was supplied. Administrator bearer-token scripts must use the browser workflow instead. A `403` response means the application origin, Fetch Metadata, or CSRF check failed. Reload the page to refresh its session state and verify that the reverse proxy preserves the browser's `Origin` and `Sec-Fetch-Site` headers. Cross-origin administration is unsupported.
 

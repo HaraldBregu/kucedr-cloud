@@ -32,7 +32,6 @@ const credentialsSchema = {
 export function registerConfigurationAuthenticationRoutes(
 	server: FastifyInstance,
 	store: ConfigurationStore,
-	adminToken: string,
 	publicUrl: string,
 	limiter: RequestLimiter
 ): void {
@@ -49,21 +48,9 @@ export function registerConfigurationAuthenticationRoutes(
 		});
 	});
 
-	server.post<{ Body: CredentialsBody & { setupToken: string } }>(
+	server.post<{ Body: CredentialsBody }>(
 		'/config/auth/register',
-		{
-			...application,
-			schema: {
-				body: {
-					...credentialsSchema.body,
-					required: [...credentialsSchema.body.required, 'setupToken'],
-					properties: {
-						...credentialsSchema.body.properties,
-						setupToken: { type: 'string', minLength: 1, maxLength: 4096 },
-					},
-				},
-			},
-		},
+		{ ...application, schema: credentialsSchema },
 		async (request, reply) => {
 			reply.header('cache-control', 'no-store');
 			if (!limiter.consume(`config-register:${request.ip}`, 5, 60_000)) {
@@ -71,9 +58,6 @@ export function registerConfigurationAuthenticationRoutes(
 			}
 			if (store.administrator())
 				return reply.code(409).send({ error: 'Registration is complete.' });
-			if (!equalText(request.body.setupToken, adminToken)) {
-				return reply.code(401).send({ error: 'Invalid setup token.' });
-			}
 			const username = normalizeUsername(request.body.username);
 			if (!username) {
 				return reply

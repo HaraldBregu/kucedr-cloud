@@ -49,7 +49,7 @@ test('config UI registers one administrator and protects browser sessions', asyn
 		assert.equal(html.headers['cache-control'], 'no-store');
 		assert.match(html.body, /Create the administrator/);
 		assert.match(html.body, /autocomplete="new-password"/);
-		assert.match(html.body, /id="register-setup-token"/);
+		assert.doesNotMatch(html.body, /setupToken|register-setup-token|Setup token/);
 		assert.doesNotMatch(html.body, new RegExp(ADMIN_TOKEN));
 		const prematureLogin = await server.inject({ method: 'GET', url: '/config/login' });
 		assert.equal(prematureLogin.statusCode, 302);
@@ -81,7 +81,7 @@ test('config UI registers one administrator and protects browser sessions', asyn
 		);
 
 		const credentials = { username: USERNAME, password: PASSWORD };
-		const registrationPayload = { ...credentials, setupToken: ADMIN_TOKEN };
+		const registrationPayload = credentials;
 		assert.equal(
 			(
 				await server.inject({
@@ -106,17 +106,23 @@ test('config UI registers one administrator and protects browser sessions', asyn
 		const untrustedRegistration = await server.inject({
 			method: 'POST',
 			url: '/config/auth/register',
-			headers: { origin: PUBLIC_URL },
+			headers: { origin: 'https://attacker.example' },
 			payload: credentials,
 		});
-		assert.equal(untrustedRegistration.statusCode, 400);
-		const wrongSetupToken = await server.inject({
-			method: 'POST',
-			url: '/config/auth/register',
-			headers: { origin: PUBLIC_URL },
-			payload: { ...credentials, setupToken: 'incorrect-setup-token' },
-		});
-		assert.equal(wrongSetupToken.statusCode, 401);
+		assert.equal(untrustedRegistration.statusCode, 403);
+		for (const payload of [
+			{ username: USERNAME },
+			{ ...credentials, password: 'short' },
+			{ ...credentials, username: '   ' },
+		]) {
+			const invalidRegistration = await server.inject({
+				method: 'POST',
+				url: '/config/auth/register',
+				headers: { origin: PUBLIC_URL },
+				payload,
+			});
+			assert.equal(invalidRegistration.statusCode, 400);
+		}
 		const registration = await server.inject({
 			method: 'POST',
 			url: '/config/auth/register',
@@ -455,7 +461,7 @@ test('configuration APIs reject bearer credentials even alongside an authenticat
 			method: 'POST',
 			url: '/config/auth/register',
 			headers: { origin: PUBLIC_URL },
-			payload: { username: USERNAME, password: PASSWORD, setupToken: ADMIN_TOKEN },
+			payload: { username: USERNAME, password: PASSWORD },
 		});
 		assert.equal(registration.statusCode, 201);
 		const cookie = sessionCookie(registration.headers['set-cookie']);
@@ -513,7 +519,7 @@ function createServer(directory: string) {
 	const store = new ConfigurationStore(directory, CONFIGURATION_KEY);
 	const issuer = new OAuthIssuer(store, PUBLIC_URL);
 	const limiter = new RequestLimiter();
-	registerConfigurationAuthenticationRoutes(server, store, ADMIN_TOKEN, PUBLIC_URL, limiter);
+	registerConfigurationAuthenticationRoutes(server, store, PUBLIC_URL, limiter);
 	registerConfigurationUiRoutes(server, store, PUBLIC_URL, issuer, limiter);
 	registerConfigurationRoutes(server, store, PUBLIC_URL, limiter);
 	return server;

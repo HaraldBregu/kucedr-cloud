@@ -156,7 +156,6 @@ elements['register-form'].addEventListener('submit', async (event) => {
 		await request('/config/auth/register', {
 			method: 'POST',
 			body: JSON.stringify({
-				setupToken: data.get('setupToken'),
 				username: data.get('username'),
 				password: data.get('password'),
 			}),

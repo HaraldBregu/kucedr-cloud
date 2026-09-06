@@ -37,10 +37,7 @@ export async function createApiServer(
 		token: options.agentToken,
 		publicUrl: options.publicUrl,
 	});
-	const adminToken =
-		options.storageApiToken === undefined
-			? process.env.KUCEDR_CLOUD_ADMIN_TOKEN?.trim()
-			: options.storageApiToken?.trim();
+	const adminToken = options.storageApiToken?.trim();
 	const accessControl = options.accessControl ?? options.storageApiToken !== null;
 	const adminAuthentication = createAdminAuthentication(dataDirectory, adminToken);
 	if (a2aConfig) await registerA2aRoutes(server, agent, a2aConfig);

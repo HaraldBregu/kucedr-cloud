@@ -73,7 +73,6 @@ test('the official A2A REST client discovers kucedr-cloud and streams continuous
 	const baseUrl = `http://127.0.0.1:${port}`;
 	const appUrl = `http://127.0.0.1:${appPort}`;
 	const servers = await createServers(agent, {
-		adminToken,
 		configurationKey,
 		dataDirectory: directory,
 		publicUrl: baseUrl,
@@ -98,7 +97,6 @@ test('the official A2A REST client discovers kucedr-cloud and streams continuous
 			method: 'POST',
 			headers: { origin: appUrl, 'content-type': 'application/json' },
 			body: JSON.stringify({
-				setupToken: adminToken,
 				username: 'administrator',
 				password: 'correct horse battery staple',
 			}),

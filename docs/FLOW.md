@@ -6,11 +6,11 @@ The private application opens account creation on first startup. Creating the ac
 
 1. Open the private application origin. Without an administrator, `/` and protected pages lead to `/config/register`.
 2. Choose any nonblank username, including spaces, punctuation, or Unicode, up to 100 characters. Leading and trailing whitespace is removed and sign-in remains case-insensitive. No email address is required.
-3. Enter a password of at least 12 characters (at most 1024 UTF-8 bytes) and the existing one-time deployment setup token. Registration creates the sole administrator and a browser session.
+3. Enter a password of at least 12 characters (at most 1024 UTF-8 bytes). Registration creates the sole administrator and a browser session.
 4. Open `/config`, the dashboard, even when no provider or clients exist.
 5. Later visits open the dashboard while the session is valid, or `/config/login` when signed out. Logging in returns to the dashboard. Logging out invalidates the session and opens login.
 
-The deployment token continues to protect initial account creation. Password hashing, encrypted persistence, session cookies, origin checks, CSRF protection, and the separate private listener remain in place. Existing accounts need no migration.
+Registration uses only the chosen username and password and is available until the first administrator is created. Password hashing, encrypted persistence, session cookies, origin checks, CSRF protection, and the separate private listener remain in place. Existing accounts need no migration.
 
 ## Navigation and pages
 

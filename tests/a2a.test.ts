@@ -130,16 +130,14 @@ test('production separates private application routes from public OAuth and A2A'
 	await assert.rejects(
 		createServers(unusedAgent(), {
 			dataDirectory: directory,
-			adminToken: null,
 			configurationKey: null,
 			publicUrl: null,
 		}),
-		/KUCEDR_CLOUD_ADMIN_TOKEN/
+		/KUCEDR_CLOUD_CONFIG_KEY/
 	);
 
 	const { application, a2a: server } = await createServers(unusedAgent(), {
 		dataDirectory: directory,
-		adminToken: ADMIN_TOKEN,
 		configurationKey: CONFIGURATION_KEY,
 		publicUrl: 'https://kucedr-cloud.example',
 	});
