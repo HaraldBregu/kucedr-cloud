@@ -78,13 +78,17 @@ export function registerConfigurationAuthenticationRoutes(
 			if (!username) {
 				return reply
 					.code(400)
-					.send({ error: 'Use 3–64 lowercase letters, numbers, dots, dashes, or underscores.' });
+					.send({ error: 'Choose a nonblank username of up to 100 characters.' });
 			}
 			if (
 				request.body.password.length < 12 ||
 				Buffer.byteLength(request.body.password, 'utf8') > 1024
 			) {
-				return reply.code(400).send({ error: 'Password must be 12–1024 UTF-8 bytes.' });
+				return reply
+					.code(400)
+					.send({
+						error: 'Password must contain at least 12 characters and at most 1024 UTF-8 bytes.',
+					});
 			}
 			const salt = randomBytes(16).toString('base64url');
 			const administrator: AdministratorCredentials = {

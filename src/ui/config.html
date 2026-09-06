@@ -8,7 +8,7 @@
 		<link rel="stylesheet" href="/config/assets/config.css" />
 		<link rel="stylesheet" href="/config/assets/shell.css" />
 		<link rel="icon" type="image/svg+xml" href="/config/assets/favicon.svg" />
-		<script src="/config/assets/config.js" defer></script>
+		<script src="/config/assets/config.js" type="module"></script>
 	</head>
 	<body>
 		<a class="skip-link" href="#main-content">Skip to content</a>
@@ -17,149 +17,129 @@
 				<span class="brand-mark" aria-hidden="true"></span>
 				<span>Kucedr</span><span class="brand-product">Cloud</span>
 			</a>
-			<nav class="primary-nav" id="section-nav" aria-label="Configuration sections" hidden>
-				<a href="#overview">Overview</a>
-				<a href="#provider-panel">Provider</a>
-				<a href="#clients-panel">Calling agents</a>
-				<a href="#connection-panel">Connection details</a>
-			</nav>
 			<div class="session-actions">
 				<span class="status-badge" id="session-status">Checking session</span>
 				<button class="button button-quiet" id="logout-button" type="button" hidden>Log out</button>
 			</div>
 		</header>
 
-		<main class="app-shell config-shell" id="main-content" tabindex="-1">
-			<div class="page-heading">
-				<p class="eyebrow">Kucedr Cloud</p>
-				<h1>Configuration</h1>
-				<p class="lede">Securely connect a model provider and authorize calling agents.</p>
-			</div>
-			<p class="notice" id="notice" role="status" aria-live="polite" hidden></p>
+		<div class="application-layout" id="application-layout">
+			<aside class="sidebar" id="section-nav" hidden>
+				<nav aria-label="Application pages">
+					<a href="/config">Dashboard</a>
+					<a href="/config/clients">Clients</a>
+					<a href="/config/provider">Provider</a>
+					<a href="/config/a2a">A2A Config</a>
+				</nav>
+			</aside>
+			<main class="app-shell config-shell" id="main-content" tabindex="-1">
+				<div class="page-heading">
+					<p class="eyebrow">Kucedr Cloud</p>
+					<h1 id="page-title">Welcome</h1>
+					<p class="lede" id="page-description">Checking your session…</p>
+				</div>
+				<p class="notice" id="notice" role="status" aria-live="polite" hidden></p>
 
-			<section class="access-card auth-card" id="register-view" hidden>
-				<p class="section-kicker">Step 1 of 2</p>
-				<h2>Create the administrator</h2>
-				<p class="access-subtitle">
-					Choose the username and password used to manage this kucedr-cloud instance.
-				</p>
-				<form id="register-form">
-					<div class="field">
-						<label for="register-setup-token">Setup token</label>
-						<input
-							id="register-setup-token"
-							name="setupToken"
-							type="password"
-							autocomplete="off"
-							maxlength="4096"
-							required
-						/>
-						<p class="helper">Enter the deployment setup token to create the administrator.</p>
-					</div>
-					<div class="field">
-						<label for="register-username">Username</label>
-						<input
-							id="register-username"
-							name="username"
-							autocomplete="username"
-							minlength="3"
-							maxlength="64"
-							pattern="[A-Za-z0-9][A-Za-z0-9._-]{2,63}"
-							required
-						/>
-						<p class="helper">3–64 letters, numbers, dots, dashes, or underscores.</p>
-					</div>
-					<div class="field">
-						<label for="register-password">Password</label>
-						<input
-							id="register-password"
-							name="password"
-							type="password"
-							autocomplete="new-password"
-							minlength="12"
-							required
-						/>
-					</div>
-					<button class="button button-primary" type="submit">Create administrator</button>
-				</form>
-			</section>
-
-			<section class="access-card auth-card" id="login-view" hidden>
-				<p class="section-kicker">Administrator access</p>
-				<h2>Log in</h2>
-				<p class="access-subtitle">Enter the username and password created during setup.</p>
-				<form id="login-form">
-					<div class="field">
-						<label for="login-username">Username</label>
-						<input id="login-username" name="username" autocomplete="username" required />
-					</div>
-					<div class="field">
-						<label for="login-password">Password</label>
-						<input
-							id="login-password"
-							name="password"
-							type="password"
-							autocomplete="current-password"
-							required
-						/>
-					</div>
-					<button class="button button-primary" type="submit">Log in</button>
-				</form>
-			</section>
-
-			<section class="access-card setup-card" id="setup-view" hidden>
-				<p class="section-kicker">Step 2 of 2</p>
-				<h2>Connect a model provider</h2>
-				<p class="access-subtitle">
-					Add the provider, model, and API key kucedr-cloud will use for agent runs.
-				</p>
-				<form id="setup-provider-form">
-					<div class="field">
-						<label for="setup-provider">Provider</label>
-						<select id="setup-provider" name="provider">
-							<option value="openai">OpenAI</option>
-							<option value="anthropic">Anthropic</option>
-							<option value="deepseek">DeepSeek</option>
-						</select>
-					</div>
-					<div class="field">
-						<label for="setup-model">Model</label>
-						<input id="setup-model" name="model" maxlength="200" required />
-					</div>
-					<div class="field">
-						<label for="setup-api-key">API key</label>
-						<input
-							id="setup-api-key"
-							name="apiKey"
-							type="password"
-							autocomplete="off"
-							maxlength="4096"
-							required
-						/>
-						<p class="helper">The API key is encrypted at rest and never returned.</p>
-					</div>
-					<button class="button button-primary" type="submit">Finish setup</button>
-				</form>
-			</section>
-
-			<div id="config-view" hidden>
-				<section class="overview" id="overview" aria-label="Configuration overview">
-					<article class="metric-card">
-						<span class="metric-label">Provider</span
-						><strong class="metric-value" id="provider-status">Not configured</strong>
-					</article>
-					<article class="metric-card">
-						<span class="metric-label">Clients</span
-						><strong class="metric-value" id="client-count">0</strong>
-					</article>
-					<article class="metric-card">
-						<span class="metric-label">Signed in as</span
-						><strong class="metric-value" id="signed-in-user">—</strong>
-					</article>
+				<section class="access-card auth-card" id="register-view" hidden>
+					<p class="section-kicker">First startup</p>
+					<h2>Create the administrator</h2>
+					<p class="access-subtitle">
+						Choose the username and password used to manage this kucedr-cloud instance.
+					</p>
+					<form id="register-form">
+						<div class="field">
+							<label for="register-setup-token">Setup token</label>
+							<input
+								id="register-setup-token"
+								name="setupToken"
+								type="password"
+								autocomplete="off"
+								maxlength="4096"
+								required
+							/>
+							<p class="helper">Enter the deployment setup token to create the administrator.</p>
+						</div>
+						<div class="field">
+							<label for="register-username">Username</label>
+							<input
+								id="register-username"
+								name="username"
+								autocomplete="username"
+								maxlength="100"
+								required
+							/>
+							<p class="helper">
+								Choose any username, up to 100 characters. No email required. Sign-in ignores case
+								and surrounding spaces.
+							</p>
+						</div>
+						<div class="field">
+							<label for="register-password">Password</label>
+							<input
+								id="register-password"
+								name="password"
+								type="password"
+								autocomplete="new-password"
+								minlength="12"
+								maxlength="1024"
+								required
+							/>
+						</div>
+						<p class="helper">Use at least 12 characters for your password.</p>
+						<button class="button button-primary" type="submit">Create administrator</button>
+					</form>
 				</section>
 
-				<div class="workspace-grid">
-					<section class="panel" id="provider-panel">
+				<section class="access-card auth-card" id="login-view" hidden>
+					<p class="section-kicker">Administrator access</p>
+					<h2>Log in</h2>
+					<p class="access-subtitle">Enter the username and password created during setup.</p>
+					<form id="login-form">
+						<div class="field">
+							<label for="login-username">Username</label>
+							<input id="login-username" name="username" autocomplete="username" required />
+						</div>
+						<div class="field">
+							<label for="login-password">Password</label>
+							<input
+								id="login-password"
+								name="password"
+								type="password"
+								autocomplete="current-password"
+								required
+							/>
+						</div>
+						<button class="button button-primary" type="submit">Log in</button>
+					</form>
+				</section>
+
+				<div id="config-view" hidden>
+					<section id="dashboard-page" hidden>
+						<div class="overview" id="overview" aria-label="Configuration overview">
+							<article class="metric-card">
+								<span class="metric-label">Provider</span
+								><strong class="metric-value" id="provider-status">Not configured</strong>
+							</article>
+							<article class="metric-card">
+								<span class="metric-label">Clients</span
+								><strong class="metric-value" id="client-count">0</strong>
+							</article>
+							<article class="metric-card">
+								<span class="metric-label">Signed in as</span
+								><strong class="metric-value" id="signed-in-user">—</strong>
+							</article>
+						</div>
+						<div class="panel dashboard-next">
+							<h2>Configure your workspace</h2>
+							<p id="provider-guidance">Connect a model provider to enable agent runs.</p>
+							<div class="button-row button-row-wrap">
+								<a class="button button-primary" href="/config/provider">Configure provider</a>
+								<a class="button button-secondary" href="/config/clients">Manage clients</a>
+								<a class="button button-secondary" href="/config/a2a">View A2A configuration</a>
+							</div>
+						</div>
+					</section>
+					<section class="panel" id="provider-panel" hidden>
 						<div class="section-heading">
 							<div>
 								<p class="section-kicker">Model</p>
@@ -200,13 +180,17 @@
 						</form>
 					</section>
 
-					<section class="panel" id="connection-panel">
+					<section class="panel" id="connection-panel" hidden>
 						<div class="section-heading">
 							<div>
 								<p class="section-kicker">OAuth 2.0</p>
-								<h2>Connection details</h2>
+								<h2>A2A connection details</h2>
 							</div>
 						</div>
+						<p class="section-copy">
+							Use these settings to connect your calling agents. The public URL is managed in
+							deployment configuration and requires a service restart to change.
+						</p>
 						<dl class="details-list">
 							<div>
 								<dt>Issuer</dt>
@@ -229,54 +213,56 @@
 								<dd>private_key_jwt</dd>
 							</div>
 						</dl>
+						<p><a href="/config/clients">Register or manage a client</a></p>
+					</section>
+
+					<section class="panel" id="clients-panel" hidden>
+						<div class="section-heading">
+							<div>
+								<p class="section-kicker">Calling agents</p>
+								<h2>Registered clients</h2>
+							</div>
+						</div>
+						<form class="client-form" id="client-form">
+							<div class="field">
+								<label for="client-name">Client name</label
+								><input id="client-name" name="name" maxlength="100" required />
+							</div>
+							<div class="field">
+								<label for="public-key">Ed25519 public JWK</label
+								><textarea
+									class="code-editor"
+									id="public-key"
+									name="publicKeyJwk"
+									rows="6"
+									spellcheck="false"
+									required
+								></textarea>
+								<p class="helper">Paste a public JWK only. Private key material is rejected.</p>
+							</div>
+							<button class="button button-primary" type="submit">Register client</button>
+						</form>
+						<div class="table-wrap">
+							<table>
+								<caption>
+									Registered OAuth clients
+								</caption>
+								<thead>
+									<tr>
+										<th>Name</th>
+										<th>Client ID</th>
+										<th>Created</th>
+										<th>Action</th>
+									</tr>
+								</thead>
+								<tbody id="client-rows"></tbody>
+							</table>
+						</div>
 					</section>
 				</div>
-
-				<section class="panel" id="clients-panel">
-					<div class="section-heading">
-						<div>
-							<p class="section-kicker">Calling agents</p>
-							<h2>Registered clients</h2>
-						</div>
-					</div>
-					<form class="client-form" id="client-form">
-						<div class="field">
-							<label for="client-name">Client name</label
-							><input id="client-name" name="name" maxlength="100" required />
-						</div>
-						<div class="field">
-							<label for="public-key">Ed25519 public JWK</label
-							><textarea
-								class="code-editor"
-								id="public-key"
-								name="publicKeyJwk"
-								rows="6"
-								spellcheck="false"
-								required
-							></textarea>
-							<p class="helper">Paste a public JWK only. Private key material is rejected.</p>
-						</div>
-						<button class="button button-primary" type="submit">Register client</button>
-					</form>
-					<div class="table-wrap">
-						<table>
-							<caption>
-								Registered OAuth clients
-							</caption>
-							<thead>
-								<tr>
-									<th>Name</th>
-									<th>Client ID</th>
-									<th>Created</th>
-									<th>Action</th>
-								</tr>
-							</thead>
-							<tbody id="client-rows"></tbody>
-						</table>
-					</div>
-				</section>
-			</div>
-		</main>
+				<p id="load-retry" hidden><a href="">Reload this page</a></p>
+			</main>
+		</div>
 		<footer class="site-footer">
 			<a class="brand" href="/config" aria-label="Kucedr Cloud home">
 				<span class="brand-mark" aria-hidden="true"></span>

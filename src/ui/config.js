@@ -1,3 +1,5 @@
+import { showPage } from './page.js';
+
 const elements = Object.fromEntries(
 	[
 		'notice',
@@ -6,11 +8,9 @@ const elements = Object.fromEntries(
 		'logout-button',
 		'register-view',
 		'login-view',
-		'setup-view',
 		'config-view',
 		'register-form',
 		'login-form',
-		'setup-provider-form',
 		'provider-form',
 		'delete-provider',
 		'client-form',
@@ -35,6 +35,7 @@ async function request(path, options = {}) {
 	if (csrf && options.method && options.method !== 'GET') headers['x-kucedr-cloud-csrf'] = csrf;
 	const response = await fetch(path, { credentials: 'same-origin', ...options, headers });
 	const body = response.status === 204 ? null : await response.json().catch(() => null);
+	if (response.status === 401 && csrf) window.location.replace('/config/login');
 	if (!response.ok)
 		throw new Error(body?.message || body?.error || `Request failed (${response.status}).`);
 	return body;
@@ -54,21 +55,13 @@ function showView(name, username = '') {
 	currentUsername = username || currentUsername;
 	elements['register-view'].hidden = name !== 'register';
 	elements['login-view'].hidden = name !== 'login';
-	elements['setup-view'].hidden = name !== 'setup';
 	elements['config-view'].hidden = name !== 'config';
 	elements['section-nav'].hidden = name !== 'config';
-	elements['logout-button'].hidden = !['setup', 'config'].includes(name);
-	elements['session-status'].dataset.connected = ['setup', 'config'].includes(name)
-		? 'true'
-		: 'false';
+	elements['logout-button'].hidden = name !== 'config';
+	elements['session-status'].dataset.connected = name === 'config' ? 'true' : 'false';
 	elements['session-status'].textContent =
-		name === 'config'
-			? 'Authenticated'
-			: name === 'setup'
-				? 'Provider setup'
-				: name === 'register'
-					? 'Setup required'
-					: 'Signed out';
+		name === 'config' ? 'Authenticated' : name === 'register' ? 'Setup required' : 'Signed out';
+	showPage(name);
 	elements['signed-in-user'].textContent = currentUsername || '—';
 }
 
@@ -109,6 +102,9 @@ function renderClients(clients) {
 
 function renderConfiguration(configuration) {
 	const provider = configuration.provider;
+	document.getElementById('provider-guidance').textContent = provider.configured
+		? 'Your provider is configured. Manage clients and review A2A connection settings.'
+		: 'Connect a model provider to enable agent runs. You can configure clients at any time.';
 	elements['provider-status'].textContent = provider.configured
 		? `${provider.provider} / ${provider.model}`
 		: 'Not configured';
@@ -129,7 +125,7 @@ function renderConfiguration(configuration) {
 async function loadConfiguration() {
 	const configuration = await request('/config/api');
 	renderConfiguration(configuration);
-	showView(configuration.provider.configured ? 'config' : 'setup', currentUsername);
+	showView('config', currentUsername);
 }
 
 async function initialize() {
@@ -141,8 +137,9 @@ async function initialize() {
 		currentUsername = status.username;
 		await loadConfiguration();
 	} catch (error) {
-		showView('login');
 		showNotice(error.message, 'error');
+		document.getElementById('page-description').textContent = 'Unable to load this page.';
+		document.getElementById('load-retry').hidden = false;
 	}
 }
 
@@ -160,21 +157,6 @@ elements['register-form'].addEventListener('submit', async (event) => {
 				password: data.get('password'),
 			}),
 		});
-		window.location.replace('/config');
-	} catch (error) {
-		showNotice(error.message, 'error');
-	} finally {
-		setBusy(form, false);
-	}
-});
-
-elements['setup-provider-form'].addEventListener('submit', async (event) => {
-	event.preventDefault();
-	const form = event.currentTarget;
-	setBusy(form, true);
-	try {
-		await saveProvider(form);
-		form.reset();
 		window.location.replace('/config');
 	} catch (error) {
 		showNotice(error.message, 'error');
@@ -235,7 +217,8 @@ elements['delete-provider'].addEventListener('click', async () => {
 		return;
 	try {
 		await request('/config/provider', { method: 'DELETE' });
-		window.location.replace('/config/setup');
+		await loadConfiguration();
+		showNotice('Provider configuration removed.');
 	} catch (error) {
 		showNotice(error.message, 'error');
 	}

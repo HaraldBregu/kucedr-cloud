@@ -9,6 +9,7 @@ import { configurationResponse } from './response';
 import type { ConfigurationStore } from './store';
 
 const html = fs.readFileSync(new URL('../../ui/config.html', import.meta.url), 'utf8');
+const pageScript = fs.readFileSync(new URL('../../ui/page.js', import.meta.url), 'utf8');
 const script = fs.readFileSync(new URL('../../ui/config.js', import.meta.url), 'utf8');
 const configStyles = fs.readFileSync(new URL('../../ui/config.css', import.meta.url), 'utf8');
 const shellStyles = fs.readFileSync(new URL('../../ui/shell.css', import.meta.url), 'utf8');
@@ -35,10 +36,16 @@ export function registerConfigurationUiRoutes(
 			.header('x-frame-options', 'DENY')
 			.type('text/html; charset=utf-8')
 			.send(html);
-	server.get('/', async (_request, reply) =>
+	server.get('/', async (request, reply) =>
 		reply
 			.header('cache-control', 'no-store')
-			.redirect(store.administrator() ? '/config/login' : '/config/register')
+			.redirect(
+				configurationPrincipal(request, store, publicUrl)
+					? '/config'
+					: store.administrator()
+						? '/config/login'
+						: '/config/register'
+			)
 	);
 	server.get('/config/assets/styles.css', async (_request, reply) =>
 		reply.header('cache-control', 'no-store').type('text/css').send(sharedStyles)
@@ -48,6 +55,9 @@ export function registerConfigurationUiRoutes(
 	);
 	server.get('/config/assets/config.js', async (_request, reply) =>
 		reply.header('cache-control', 'no-store').type('application/javascript').send(script)
+	);
+	server.get('/config/assets/page.js', async (_request, reply) =>
+		reply.header('cache-control', 'no-store').type('application/javascript').send(pageScript)
 	);
 	server.get('/config/assets/shell.css', async (_request, reply) =>
 		reply.header('cache-control', 'no-store').type('text/css').send(shellStyles)
@@ -67,12 +77,6 @@ export function registerConfigurationUiRoutes(
 					.header('vary', 'Accept')
 					.redirect(store.administrator() ? '/config/login' : '/config/register');
 			}
-			if (!store.provider()) {
-				return reply
-					.header('cache-control', 'no-store')
-					.header('vary', 'Accept')
-					.redirect('/config/setup');
-			}
 			return sendPage(reply.header('vary', 'Accept'));
 		}
 		await authenticate(request, reply);
@@ -84,9 +88,7 @@ export function registerConfigurationUiRoutes(
 	);
 	server.get('/config/register', async (request, reply) => {
 		if (configurationPrincipal(request, store, publicUrl)) {
-			return reply
-				.header('cache-control', 'no-store')
-				.redirect(store.provider() ? '/config' : '/config/setup');
+			return reply.header('cache-control', 'no-store').redirect('/config');
 		}
 		if (store.administrator()) {
 			return reply.header('cache-control', 'no-store').redirect('/config/login');
@@ -95,24 +97,24 @@ export function registerConfigurationUiRoutes(
 	});
 	server.get('/config/login', async (request, reply) => {
 		if (configurationPrincipal(request, store, publicUrl)) {
-			return reply
-				.header('cache-control', 'no-store')
-				.redirect(store.provider() ? '/config' : '/config/setup');
+			return reply.header('cache-control', 'no-store').redirect('/config');
 		}
 		if (!store.administrator()) {
 			return reply.header('cache-control', 'no-store').redirect('/config/register');
 		}
 		return sendPage(reply);
 	});
-	server.get('/config/setup', async (request, reply) => {
-		if (!configurationPrincipal(request, store, publicUrl)) {
-			return reply
-				.header('cache-control', 'no-store')
-				.redirect(store.administrator() ? '/config/login' : '/config/register');
-		}
-		if (store.provider()) {
-			return reply.header('cache-control', 'no-store').redirect('/config');
-		}
-		return sendPage(reply);
-	});
+	for (const route of ['/config/clients', '/config/provider', '/config/a2a', '/config/setup']) {
+		server.get(route, async (request, reply) => {
+			if (!configurationPrincipal(request, store, publicUrl)) {
+				return reply
+					.header('cache-control', 'no-store')
+					.redirect(store.administrator() ? '/config/login' : '/config/register');
+			}
+			if (route === '/config/setup') {
+				return reply.header('cache-control', 'no-store').redirect('/config/provider');
+			}
+			return sendPage(reply);
+		});
+	}
 }
