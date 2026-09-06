@@ -48,6 +48,10 @@ function showNotice(message, kind = 'success') {
 }
 
 function setBusy(form, busy) {
+	form.setAttribute('aria-busy', String(busy));
+	const submit = form.querySelector('button[type="submit"]');
+	if (busy) submit.dataset.label = submit.textContent;
+	submit.textContent = busy ? 'Submitting…' : submit.dataset.label;
 	for (const control of form.elements) control.disabled = busy;
 }
 

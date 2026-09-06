@@ -84,11 +84,9 @@ export function registerConfigurationAuthenticationRoutes(
 				request.body.password.length < 12 ||
 				Buffer.byteLength(request.body.password, 'utf8') > 1024
 			) {
-				return reply
-					.code(400)
-					.send({
-						error: 'Password must contain at least 12 characters and at most 1024 UTF-8 bytes.',
-					});
+				return reply.code(400).send({
+					error: 'Password must contain at least 12 characters and at most 1024 UTF-8 bytes.',
+				});
 			}
 			const salt = randomBytes(16).toString('base64url');
 			const administrator: AdministratorCredentials = {
