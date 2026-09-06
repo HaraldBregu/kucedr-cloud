@@ -4,9 +4,11 @@ import {
 	existsSync,
 	mkdtempSync,
 	mkdirSync,
+	readdirSync,
 	readFileSync,
 	rmSync,
 	statSync,
+	symlinkSync,
 	writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -90,11 +92,25 @@ esac
 		for (const command of ['uname', 'id', 'openssl', 'curl', 'docker']) {
 			writeFileSync(path.join(bin, command), mock, { mode: 0o755 });
 		}
+		const truncated = installer.replace(/\nmain "\$@"[^\n]*\n?$/, '\n');
+		assert.notEqual(truncated, installer);
+		const truncatedLog = path.join(root, 'truncated.log');
+		const truncatedResult = spawnSync('/bin/sh', [], {
+			input: truncated,
+			env: { PATH: `${bin}:/usr/bin:/bin`, FAKE_LOG: truncatedLog },
+			encoding: 'utf8',
+			timeout: 10000,
+		});
+		assert.ifError(truncatedResult.error);
+		assert.equal(truncatedResult.status, 0, truncatedResult.stderr);
+		assert.equal(existsSync(truncatedLog), false, 'incomplete download must not run installation');
 		for (const scenario of [
 			'fresh',
 			'arm64',
 			'rerun',
+			'retry-build',
 			'restore-config',
+			'symlink-env',
 			'existing-volume',
 			'unrelated-directory',
 			'partial-archive',
@@ -132,7 +148,7 @@ esac
 				KUCEDR_CLOUD_BIND_ADDRESS: '0.0.0.0',
 				FAKE_LOG: log,
 				FAKE_ARCHIVE: scenario === 'partial-archive' ? partial : archive,
-				FAKE_MODE: scenario,
+				FAKE_MODE: scenario === 'retry-build' ? 'build-failure' : scenario,
 				FAKE_ARCH:
 					scenario === 'arm64' ? 'aarch64' : scenario === 'unsupported-arch' ? 'i686' : 'x86_64',
 				FAKE_ENDPOINT: scenario === 'remote-daemon' ? 'ssh://remote.example.com' : undefined,
@@ -143,16 +159,21 @@ esac
 				writeFileSync(path.join(install, 'unrelated.txt'), 'preserve me');
 			}
 			let previousConfig = '';
-			const attempts = scenario === 'rerun' || scenario === 'restore-config' ? 2 : 1;
+			const attempts = ['rerun', 'retry-build', 'restore-config', 'symlink-env'].includes(scenario) ? 2 : 1;
 			for (let attempt = 0; attempt < attempts; attempt++) {
 				if (attempt === 1) {
 					writeFileSync(log, '');
-					environment.FAKE_MODE = scenario === 'rerun' ? 'download-failure' : 'existing-volume';
+					environment.FAKE_MODE = scenario === 'restore-config' ? 'existing-volume' : 'download-failure';
 					environment.KUCEDR_CLOUD_PUBLIC_URL = 'https://changed.example.com';
 					if (scenario === 'restore-config') rmSync(path.join(install, '.env'));
-					else {
+					else if (scenario === 'rerun') {
 						previousConfig += `\nSHELL_LITERAL=$(touch '${path.join(directory, 'executed')}')\n`;
 						writeFileSync(path.join(install, '.env'), previousConfig);
+					} else if (scenario === 'symlink-env') {
+						const original = path.join(directory, 'original.env');
+						writeFileSync(original, previousConfig);
+						rmSync(path.join(install, '.env'));
+						symlinkSync(original, path.join(install, '.env'));
 					}
 				}
 				const result = spawnSync('/bin/sh', [], {
@@ -166,8 +187,13 @@ esac
 				const commands = readFileSync(log, 'utf8');
 				const success =
 					['fresh', 'arm64', 'rerun'].includes(scenario) ||
-					(scenario === 'restore-config' && attempt === 0);
+					(['restore-config', 'symlink-env'].includes(scenario) && attempt === 0) ||
+					(scenario === 'retry-build' && attempt === 1);
 				assert.ifError(result.error);
+				assert.equal(existsSync(`${install}.lock`), false, `${scenario} left an installer lock`);
+				for (const entry of readdirSync(directory)) {
+					assert.equal(entry.startsWith('.kucedr-install.'), false, `${scenario} left staging files`);
+				}
 				assert.doesNotMatch(output, new RegExp(`${key}|must-not-override-generated-key`), scenario);
 				if (success) {
 					assert.equal(result.status, 0, `${scenario}: ${output}\n${commands}`);
@@ -202,6 +228,19 @@ esac
 					if (scenario === 'existing-volume' || scenario === 'restore-config') {
 						assert.doesNotMatch(commands, /openssl /, scenario);
 						assert.match(output, /restor|backup/i, scenario);
+					}
+					if (['download-failure', 'partial-archive'].includes(scenario)) {
+						assert.equal(existsSync(install), false, `${scenario} left a partial installation`);
+					}
+					if (['config-failure', 'build-failure', 'retry-build', 'invalid-config', 'health-failure'].includes(scenario)) {
+						previousConfig = readFileSync(path.join(install, '.env'), 'utf8');
+						assert.match(previousConfig, new RegExp(`KUCEDR_CLOUD_ENCRYPTION_KEY=['"]?${key}`));
+						assert.equal(statSync(path.join(install, '.env')).mode & 0o777, 0o600);
+						assert.equal(readFileSync(path.join(install, '.kucedr-revision'), 'utf8').trim(), revision);
+					}
+					if (scenario === 'symlink-env') {
+						assert.match(output, /symbolic link/i);
+						assert.equal(readFileSync(path.join(directory, 'original.env'), 'utf8'), previousConfig);
 					}
 				}
 			}
