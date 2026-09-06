@@ -11,6 +11,8 @@ export function createHttpServer() {
 				'req.body.apiKey',
 				'req.body.client_assertion',
 				'req.body.password',
+				'req.body.currentPassword',
+				'req.body.newPassword',
 			],
 		},
 	});

@@ -10,6 +10,11 @@ const pages = {
 		'Provider',
 		'Save multiple providers and choose the active model for agent runs.',
 	],
+	'/config/administrator': [
+		'administrator-panel',
+		'Administrator',
+		'Update your username and password.',
+	],
 	'/config/a2a': ['connection-panel', 'A2A Config', 'Connection settings for your calling agents.'],
 };
 

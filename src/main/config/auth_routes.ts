@@ -1,3 +1,4 @@
+import { registerAdministratorRoutes } from './account';
 import { randomBytes } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import type { RequestLimiter } from '../oauth/limit';
@@ -35,6 +36,7 @@ export function registerConfigurationAuthenticationRoutes(
 	publicUrl: string,
 	limiter: RequestLimiter
 ): void {
+	registerAdministratorRoutes(server, store, publicUrl, limiter);
 	const application = { onRequest: createApplicationAuthentication(publicUrl) };
 	const authenticate = createConfigurationAuthentication(store, publicUrl, limiter);
 	server.get('/config/auth/status', application, async (request, reply) => {
@@ -109,7 +111,8 @@ export function registerConfigurationAuthenticationRoutes(
 			if (
 				!administrator ||
 				!equalText(username, administrator.username) ||
-				!equalText(digest, administrator.digest)
+				!equalText(digest, administrator.digest) ||
+				store.administrator()?.sessionSecret !== administrator.sessionSecret
 			) {
 				return reply.code(401).send({ error: 'Invalid username or password.' });
 			}

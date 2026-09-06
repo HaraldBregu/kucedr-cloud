@@ -75,6 +75,22 @@ export class ConfigurationStore {
 		return true;
 	}
 
+	updateAdministrator(
+		expected: AdministratorCredentials,
+		replacement: AdministratorCredentials,
+		tokenHash: string
+	): boolean {
+		if (
+			this.administrator()?.sessionSecret !== expected.sessionSecret ||
+			!this.hasSession(tokenHash, Date.now())
+		)
+			return false;
+		this.document.administrator = seal(replacement, this.encryptionKey, 'administrator');
+		this.document.sessions = [];
+		this.write();
+		return true;
+	}
+
 	addSession(session: ConfigurationSession, now: number): void {
 		this.document.sessions = this.document.sessions
 			.filter((stored) => stored.expiresAt > now)

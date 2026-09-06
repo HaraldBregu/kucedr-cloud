@@ -1,3 +1,4 @@
+import { registerAccountForm } from './account.js';
 import { showPage } from './page.js';
 import { renderProviders } from './providers.js';
 import { renderProviderEditor } from './editor.js';
@@ -143,8 +144,14 @@ async function initialize() {
 		const status = await request('/config/auth/status');
 		csrf = status.csrfToken || '';
 		if (!status.registered) return showView('register');
-		if (!status.authenticated) return showView('login');
+		if (!status.authenticated) {
+			showView('login');
+			if (new URLSearchParams(window.location.search).get('updated') === '1')
+				showNotice('Administrator updated. Log in with your updated credentials.');
+			return;
+		}
 		currentUsername = status.username;
+		document.getElementById('administrator-username').value = currentUsername;
 		await loadConfiguration();
 	} catch (error) {
 		showNotice(error.message, 'error');
@@ -308,4 +315,5 @@ async function revokeClient(clientId, name) {
 	}
 }
 
+registerAccountForm(request, showNotice, setBusy);
 initialize();
