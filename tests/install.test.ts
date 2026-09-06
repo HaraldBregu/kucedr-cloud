@@ -39,12 +39,12 @@ test('server installer handles piped installation, recovery, and failures withou
 			0
 		);
 		const mock = `#!/bin/sh
-name=${0##*/}
+name=\${0##*/}
 printf '%s\\n' "$name $*" >> "$FAKE_LOG"
 case "$name" in
   uname)
     if [ "$FAKE_MODE" = unsupported-os ]; then printf 'Darwin\\n';
-    elif [ "$1" = -m ]; then printf '%s\\n' "${FAKE_ARCH:-x86_64}";
+    elif [ "$1" = -m ]; then printf '%s\\n' "\${FAKE_ARCH:-x86_64}";
     else printf 'Linux\\n'; fi ;;
   id) printf '1000\\n' ;;
   openssl) printf '%s\\n' '${key}' ;;
@@ -58,15 +58,19 @@ case "$name" in
     [ -n "$destination" ] || exit 90
     cp "$FAKE_ARCHIVE" "$destination" ;;
   docker)
-    [ -z "${KUCEDR_CLOUD_ENCRYPTION_KEY:-}" ] || exit 91
-    [ -z "${KUCEDR_CLOUD_BIND_ADDRESS:-}" ] || exit 92
-    [ -z "${KUCEDR_CLOUD_PUBLIC_URL:-}" ] || exit 93
+    case "$*" in
+      *--help*|'context inspect'*|info*|'compose version'*) ;;
+      *)
+        [ -z "\${KUCEDR_CLOUD_ENCRYPTION_KEY:-}" ] || exit 91
+        [ -z "\${KUCEDR_CLOUD_BIND_ADDRESS:-}" ] || exit 92
+        [ -z "\${KUCEDR_CLOUD_PUBLIC_URL:-}" ] || exit 93 ;;
+    esac
     case "$*" in
       info*) [ "$FAKE_MODE" != daemon-failure ] ;;
-      context\ inspect*) printf '%s\\n' "${FAKE_ENDPOINT:-unix:///var/run/docker.sock}" ;;
-      volume\ ls*)
+      'context inspect'*) printf '%s\\n' "\${FAKE_ENDPOINT:-unix:///var/run/docker.sock}" ;;
+      'volume ls'*)
         if [ "$FAKE_MODE" = existing-volume ]; then printf 'kucedr-cloud-data\\n'; fi ;;
-      compose\ version*) [ "$FAKE_MODE" != compose-missing ] ;;
+      'compose version'*) [ "$FAKE_MODE" != compose-missing ] ;;
       *--help*)
         [ "$FAKE_MODE" != compose-old ] || exit 0
         printf '%s\\n' '--wait --wait-timeout' ;;
