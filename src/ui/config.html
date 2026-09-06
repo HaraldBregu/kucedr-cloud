@@ -152,8 +152,14 @@
 								<p class="section-kicker">Model</p>
 								<h2>Provider</h2>
 							</div>
+							<button class="button button-primary" id="add-provider" type="button">
+								Add provider
+							</button>
 						</div>
 						<p class="section-copy">The API key is encrypted at rest and never returned.</p>
+						<p class="helper" id="provider-limit" hidden>
+							All supported providers are saved. You can edit or remove them below.
+						</p>
 						<div class="table-wrap">
 							<table>
 								<caption>
@@ -170,42 +176,44 @@
 								<tbody id="provider-rows"></tbody>
 							</table>
 						</div>
-						<h3>Add or edit a provider</h3>
-						<p class="section-copy">
-							Select a provider below to add or update its model and key. Saving another provider
-							keeps your active provider selected.
-						</p>
-						<form id="provider-form">
-							<div class="field">
-								<label for="provider">Provider</label
-								><select id="provider" name="provider">
-									<option value="openai">OpenAI</option>
-									<option value="anthropic">Anthropic</option>
-									<option value="deepseek">DeepSeek</option>
-								</select>
-							</div>
-							<div class="field">
-								<label for="model">Model</label
-								><input id="model" name="model" maxlength="200" required />
-							</div>
-							<div class="field">
-								<label for="api-key">API key</label
-								><input
-									id="api-key"
-									name="apiKey"
-									type="password"
-									autocomplete="off"
-									maxlength="4096"
-								/>
-								<p class="helper" id="api-key-helper">Required for the selected provider.</p>
-							</div>
-							<div class="button-row button-row-wrap">
-								<button class="button button-primary" type="submit">Save provider</button
-								><button class="button button-danger" id="delete-provider" type="button">
-									Remove provider
-								</button>
-							</div>
-						</form>
+						<div id="provider-editor" hidden>
+							<h3 id="provider-editor-title">Add provider</h3>
+							<p class="section-copy">
+								Enter the provider’s model and API key. Saving another provider keeps your active
+								provider selected.
+							</p>
+							<form id="provider-form">
+								<div class="field">
+									<label for="provider">Provider</label
+									><select id="provider" name="provider">
+										<option value="openai">OpenAI</option>
+										<option value="anthropic">Anthropic</option>
+										<option value="deepseek">DeepSeek</option>
+									</select>
+								</div>
+								<div class="field">
+									<label for="model">Model</label
+									><input id="model" name="model" maxlength="200" required />
+								</div>
+								<div class="field">
+									<label for="api-key">API key</label
+									><input
+										id="api-key"
+										name="apiKey"
+										type="password"
+										autocomplete="off"
+										maxlength="4096"
+									/>
+									<p class="helper" id="api-key-helper">Required for the selected provider.</p>
+								</div>
+								<div class="button-row button-row-wrap">
+									<button class="button button-primary" type="submit">Save provider</button
+									><button class="button button-secondary" id="cancel-provider" type="button">
+										Cancel
+									</button>
+								</div>
+							</form>
+						</div>
 					</section>
 
 					<section class="panel" id="administrator-panel" hidden>

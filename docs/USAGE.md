@@ -95,11 +95,11 @@ Browser sessions last 12 hours, use an HTTP-only same-site cookie, and are revok
 
 Configure the provider in the browser after signing in at `/config` on the private application origin. Provider, model, API key, base URL, and model-option environment fallbacks are not supported.
 
-1. Open **Provider** in the left sidebar, select OpenAI, Anthropic, or DeepSeek, enter its model ID and API key, then choose **Save provider**. The first saved provider becomes active.
-2. Select another provider and save its own model and key. Each provider keeps one independent configuration; saving another does not replace or activate it.
+1. Open **Provider** in the left sidebar, choose **Add provider**, select OpenAI, Anthropic, or DeepSeek, enter its model ID and API key, then choose **Save provider**. The first saved provider becomes active.
+2. Choose **Add provider** again to select another provider and save its own model and key. Each provider keeps one independent configuration; saving another does not replace or activate it.
 3. In **Saved providers**, choose **Use provider** to select which provider new agent runs use. **Dashboard** shows the active provider and model.
-4. To edit a saved provider, select it in the form. Its model loads automatically; leave the API key blank to retain that provider’s saved key.
-5. **Remove provider** removes only the provider selected in the form. If it was active, select another saved provider before starting new agent runs. Other saved configurations are retained.
+4. To edit a saved provider, choose **Edit** on its row. Its model loads automatically; leave the API key blank to retain that provider’s saved key.
+5. **Remove** on a saved provider’s row deletes only that provider after confirmation. If it was active, select another saved provider before starting new agent runs. Other saved configurations are retained.
 
 Existing encrypted single-provider settings remain available. Saved providers, their keys, and the active choice persist across restarts. A run already assigned to a provider can still resolve that provider after the active selection changes.
 

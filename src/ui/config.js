@@ -15,7 +15,6 @@ const elements = Object.fromEntries(
 		'register-form',
 		'login-form',
 		'provider-form',
-		'delete-provider',
 		'client-form',
 		'provider-status',
 		'client-count',
@@ -212,17 +211,67 @@ document
 	.getElementById('provider')
 	.addEventListener('change', () => renderProviderEditor(savedProviders));
 
+document.getElementById('add-provider').addEventListener('click', () => {
+	const select = document.getElementById('provider');
+	const available = Array.from(select.options).find(
+		(option) => !savedProviders.some((provider) => provider.provider === option.value)
+	);
+	if (!available) return;
+	select.value = available.value;
+	document.getElementById('provider-editor').dataset.mode = 'add';
+	renderProviderEditor(savedProviders);
+	document.getElementById('provider-editor').hidden = false;
+	select.focus();
+});
+
+document.getElementById('cancel-provider').addEventListener('click', () => {
+	document.getElementById('provider-editor').hidden = true;
+	document.getElementById('api-key').value = '';
+	const target = document.getElementById('add-provider').disabled
+		? document.querySelector('#provider-rows button[data-action="edit"]')
+		: document.getElementById('add-provider');
+	target?.focus();
+});
+
 document.getElementById('provider-rows').addEventListener('click', async (event) => {
 	const button = event.target.closest('button[data-provider]');
-	if (!button) return;
+	if (!button || button.disabled) return;
+	const id = button.dataset.provider;
+	const action = button.dataset.action;
+	if (action === 'edit') {
+		document.getElementById('provider').value = id;
+		document.getElementById('provider-editor').dataset.mode = 'edit';
+		renderProviderEditor(savedProviders);
+		document.getElementById('provider-editor').hidden = false;
+		document.getElementById('model').focus();
+		return;
+	}
+	if (
+		action === 'remove' &&
+		!window.confirm(
+			`Remove ${id}? Its saved model and API key will be deleted.${savedProviders.find((provider) => provider.provider === id)?.active ? ' Choose another saved provider before starting new agent runs.' : ''}`
+		)
+	)
+		return;
 	button.disabled = true;
 	try {
-		await request('/config/provider/active', {
-			method: 'PUT',
-			body: JSON.stringify({ provider: button.dataset.provider }),
-		});
+		if (action === 'remove') {
+			await request(`/config/provider/${id}`, { method: 'DELETE' });
+			if (document.getElementById('provider').value === id)
+				document.getElementById('provider-editor').hidden = true;
+		} else {
+			await request('/config/provider/active', {
+				method: 'PUT',
+				body: JSON.stringify({ provider: id }),
+			});
+		}
 		await loadConfiguration();
-		showNotice('Active provider updated. New agent runs will use this provider.');
+		showNotice(
+			action === 'remove'
+				? `${id} removed.`
+				: 'Active provider updated. New agent runs will use this provider.'
+		);
+		if (action === 'remove') document.getElementById('add-provider').focus();
 	} catch (error) {
 		showNotice(error.message, 'error');
 	} finally {
@@ -236,6 +285,7 @@ elements['provider-form'].addEventListener('submit', async (event) => {
 	setBusy(form, true);
 	try {
 		await saveProvider(form);
+		document.getElementById('provider-editor').hidden = true;
 		document.getElementById('api-key').value = '';
 		await loadConfiguration();
 		showNotice('Provider configuration saved.');
@@ -243,27 +293,6 @@ elements['provider-form'].addEventListener('submit', async (event) => {
 		showNotice(error.message, 'error');
 	} finally {
 		setBusy(form, false);
-		elements['delete-provider'].disabled = !savedProviders.some(
-			(provider) => provider.provider === document.getElementById('provider').value
-		);
-	}
-});
-
-elements['delete-provider'].addEventListener('click', async () => {
-	if (
-		!window.confirm(
-			'Remove the selected provider? If it is active, choose another saved provider before starting new agent runs.'
-		)
-	)
-		return;
-	try {
-		await request(`/config/provider/${document.getElementById('provider').value}`, {
-			method: 'DELETE',
-		});
-		await loadConfiguration();
-		showNotice('Provider configuration removed.');
-	} catch (error) {
-		showNotice(error.message, 'error');
 	}
 });
 

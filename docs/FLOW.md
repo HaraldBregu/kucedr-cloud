@@ -20,7 +20,7 @@ The signed-in application has a persistent left sidebar and one main content are
 | --- | --- | --- |
 | Dashboard | `/config` | Provider status, client count, signed-in username, links to configuration pages, and an explanation of the encryption key and what it protects. An unconfigured provider offers a setup link. |
 | Clients | `/config/clients` | Register a calling agent with a name and public Ed25519 JWK, list client IDs, and revoke access with confirmation. |
-| Provider | `/config/provider` | Save OpenAI, Anthropic, and DeepSeek independently; edit each model/key, choose the active provider, or remove a selected provider. |
+| Provider | `/config/provider` | Save OpenAI, Anthropic, and DeepSeek independently; use Add provider to open a new form, Edit to change a saved model/key, Use provider to activate it, or Remove on a saved row with confirmation. |
 | Administrator | `/config/administrator` | Change the username and/or password after confirming the current password. All sessions end after a successful change. |
 | A2A Config | `/config/a2a` | Review OAuth issuer, token endpoint, A2A resource, scope, and authentication method used by clients. Link to client registration. |
 
