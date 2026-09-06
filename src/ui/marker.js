@@ -9,18 +9,18 @@ export class PersistenceMarker {
 		const current = await this.#api.request('/settings');
 		const id = crypto.randomUUID();
 		const filePath = `checks/ui-volume-${id}.json`;
-		const hadPrevious = Object.hasOwn(current.settings, '_idraVolumeTest');
+		const hadPrevious = Object.hasOwn(current.settings, '_kucedrCloudVolumeTest');
 		const marker = {
 			id,
 			createdAt: new Date().toISOString(),
 			filePath,
 			settingsExisted: current.exists,
 			hadPrevious,
-			previous: hadPrevious ? current.settings._idraVolumeTest : null,
+			previous: hadPrevious ? current.settings._kucedrCloudVolumeTest : null,
 		};
 		await this.#api.request('/settings', {
 			method: 'PUT',
-			body: { settings: { ...current.settings, _idraVolumeTest: marker } },
+			body: { settings: { ...current.settings, _kucedrCloudVolumeTest: marker } },
 		});
 		await this.#api.request('/files', {
 			method: 'PUT',
@@ -34,7 +34,7 @@ export class PersistenceMarker {
 
 	async verify() {
 		const current = await this.#api.request('/settings');
-		const marker = current.settings?._idraVolumeTest;
+		const marker = current.settings?._kucedrCloudVolumeTest;
 		if (!marker?.id || !marker.filePath) throw new Error('No persistence marker is prepared.');
 		const storedFile = await this.#api.request(
 			`/files?${new URLSearchParams({ path: marker.filePath })}`
@@ -46,11 +46,11 @@ export class PersistenceMarker {
 
 	async cleanup() {
 		const current = await this.#api.request('/settings');
-		const marker = current.settings?._idraVolumeTest;
+		const marker = current.settings?._kucedrCloudVolumeTest;
 		if (!marker?.id || !marker.filePath) throw new Error('No persistence marker is prepared.');
 		const nextSettings = { ...current.settings };
-		delete nextSettings._idraVolumeTest;
-		if (marker.hadPrevious) nextSettings._idraVolumeTest = marker.previous;
+		delete nextSettings._kucedrCloudVolumeTest;
+		if (marker.hadPrevious) nextSettings._kucedrCloudVolumeTest = marker.previous;
 		if (marker.settingsExisted || Object.keys(nextSettings).length > 0) {
 			await this.#api.request('/settings', {
 				method: 'PUT',

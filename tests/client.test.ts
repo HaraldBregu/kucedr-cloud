@@ -14,8 +14,8 @@ import { ConfigurationStore } from '../src/main/config/store';
 import { OAuthError } from '../src/main/oauth/error';
 import { OAuthIssuer } from '../src/main/oauth/issuer';
 
-test('the official A2A REST client discovers Idra and streams continuous contexts', async (context) => {
-	const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'idra-a2a-client-'));
+test('the official A2A REST client discovers kucedr-cloud and streams continuous contexts', async (context) => {
+	const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'kucedr-cloud-a2a-client-'));
 	const adminToken = 'official-client-admin-token-32-bytes-long';
 	const configurationKey = '22'.repeat(32);
 	const requests: Array<{ message: string; options: AgentSendOptions }> = [];

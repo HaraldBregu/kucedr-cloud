@@ -28,7 +28,7 @@ export function createConfigurationAuthentication(
 		if (principal.method === 'ui-session' && !['GET', 'HEAD', 'OPTIONS'].includes(request.method)) {
 			const administrator = store.administrator();
 			const origin = request.headers.origin;
-			const submitted = request.headers['x-idra-csrf'];
+			const submitted = request.headers['x-kucedr-cloud-csrf'];
 			if (
 				!administrator ||
 				origin !== publicUrl ||

@@ -5,7 +5,7 @@ export function resolvePublicUrl(value: string): string {
 	try {
 		url = new URL(value.trim());
 	} catch {
-		throw new Error('IDRA_PUBLIC_URL must be a valid URL origin.');
+		throw new Error('KUCEDR_CLOUD_PUBLIC_URL must be a valid URL origin.');
 	}
 	const loopback =
 		url.hostname === 'localhost' ||
@@ -21,7 +21,7 @@ export function resolvePublicUrl(value: string): string {
 		(url.protocol !== 'https:' && !(url.protocol === 'http:' && loopback))
 	) {
 		throw new Error(
-			'IDRA_PUBLIC_URL must be an HTTPS origin without credentials, path, query, or fragment; HTTP is allowed only for loopback development.'
+			'KUCEDR_CLOUD_PUBLIC_URL must be an HTTPS origin without credentials, path, query, or fragment; HTTP is allowed only for loopback development.'
 		);
 	}
 	return url.origin;

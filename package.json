@@ -1,11 +1,11 @@
 {
-  "name": "idra",
+  "name": "kucedr-cloud",
   "homepage": "https://github.com/HaraldBregu/idra",
   "repository": {
     "type": "git",
     "url": "https://github.com/HaraldBregu/idra.git"
   },
-  "description": "Idra",
+  "description": "kucedr-cloud",
   "author": "Harald Bregu <harald.bregu@gmail.com>",
   "version": "1.0.2",
   "private": true,

@@ -1,8 +1,8 @@
 export async function runSuite(api, hooks) {
 	const id = crypto.randomUUID();
 	const filePath = `checks/ui-suite-${id}.txt`;
-	const firstContent = `Idra storage UI suite ${id}`;
-	const secondContent = `Idra storage UI suite updated ${id}`;
+	const firstContent = `kucedr-cloud storage UI suite ${id}`;
+	const secondContent = `kucedr-cloud storage UI suite updated ${id}`;
 	let snapshot;
 	let cleaned = false;
 	hooks.reset();
@@ -22,12 +22,12 @@ export async function runSuite(api, hooks) {
 			body: {
 				settings: {
 					...snapshot.settings,
-					_idraStorageTest: { id, createdAt: new Date().toISOString() },
+					_kucedrCloudStorageTest: { id, createdAt: new Date().toISOString() },
 				},
 			},
 		});
 		const settings = await api.request('/settings');
-		if (settings.settings?._idraStorageTest?.id !== id)
+		if (settings.settings?._kucedrCloudStorageTest?.id !== id)
 			throw new Error('Settings marker mismatch.');
 		hooks.step('settings', 'passed');
 

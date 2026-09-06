@@ -3,5 +3,5 @@ export function generateAccessKey(random = crypto) {
 	random.getRandomValues(bytes);
 	let binary = '';
 	for (const byte of bytes) binary += String.fromCharCode(byte);
-	return `idra_${btoa(binary).replaceAll('+', '-').replaceAll('/', '_').replace(/=+$/, '')}`;
+	return `kucedr-cloud_${btoa(binary).replaceAll('+', '-').replaceAll('/', '_').replace(/=+$/, '')}`;
 }

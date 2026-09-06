@@ -144,7 +144,7 @@ function validCsrf(
 	publicUrl: string
 ): boolean {
 	const administrator = store.administrator();
-	const submitted = request.headers['x-idra-csrf'];
+	const submitted = request.headers['x-kucedr-cloud-csrf'];
 	return Boolean(
 		administrator &&
 		request.headers.origin === publicUrl &&

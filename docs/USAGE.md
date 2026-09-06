@@ -34,14 +34,14 @@ openssl rand -hex 32
 Copy them into `.env`:
 
 ```dotenv
-IDRA_PUBLIC_URL=https://agent.example.com
-IDRA_ADMIN_TOKEN=<first-generated-value>
-IDRA_CONFIG_KEY=<second-generated-value>
+KUCEDR_CLOUD_PUBLIC_URL=https://agent.example.com
+KUCEDR_CLOUD_ADMIN_TOKEN=<first-generated-value>
+KUCEDR_CLOUD_CONFIG_KEY=<second-generated-value>
 ```
 
-`IDRA_PUBLIC_URL` is the public origin only. Do not add `/a2a` to it. Production URLs must use HTTPS. Loopback HTTP such as `http://127.0.0.1:3000` is for isolated testing only; never send real administrator credentials, client assertions, or access tokens over HTTP. Keep both generated values out of calling-agent environments.
+`KUCEDR_CLOUD_PUBLIC_URL` is the public origin only. Do not add `/a2a` to it. Production URLs must use HTTPS. Loopback HTTP such as `http://127.0.0.1:3000` is for isolated testing only; never send real administrator credentials, client assertions, or access tokens over HTTP. Keep both generated values out of calling-agent environments.
 
-Back up the exact `IDRA_CONFIG_KEY` in a protected secret manager before starting Idra. It encrypts the persisted provider and token-signing secrets. Losing or replacing it makes the existing secure configuration unreadable and prevents startup. Online rotation of this key is not currently supported.
+Back up the exact `KUCEDR_CLOUD_CONFIG_KEY` in a protected secret manager before starting Idra. It encrypts the persisted provider and token-signing secrets. Losing or replacing it makes the existing secure configuration unreadable and prevents startup. Online rotation of this key is not currently supported.
 
 Validate and start the container:
 
@@ -65,7 +65,7 @@ Idra exposes four distinct REST surfaces:
 | `/config` (browser)       | Administrator username and password  | Register or sign in, then configure the provider and calling-agent public keys      |
 | `/config` and `/config/*` | Administrator bearer token           | Automate provider and calling-agent configuration                                  |
 
-The administrator token cannot invoke A2A, and an A2A token cannot access `/config`. `IDRA_ADMIN_TOKEN` is reserved for trusted configuration API automation; browser registration does not use it. `IDRA_CONFIG_KEY` encrypts the administrator credentials and provider key at rest. Both remain deployment secrets and are not managed through `/config`.
+The administrator token cannot invoke A2A, and an A2A token cannot access `/config`. `KUCEDR_CLOUD_ADMIN_TOKEN` is reserved for trusted configuration API automation; browser registration does not use it. `KUCEDR_CLOUD_CONFIG_KEY` encrypts the administrator credentials and provider key at rest. Both remain deployment secrets and are not managed through `/config`.
 
 ## Create the administrator
 
@@ -78,11 +78,11 @@ Browser sessions last 12 hours, use an HTTP-only same-site cookie, and are revok
 The browser setup page is the primary way to configure the provider. Provider, model, API key, base URL, and model-option environment fallbacks are not supported. To automate configuration after administrator registration, set administrator variables only in a trusted operator shell, then write the provider key:
 
 ```bash
-export IDRA_URL='https://agent.example.com'
-export IDRA_ADMIN_TOKEN='<first-generated-value>'
+export KUCEDR_CLOUD_URL='https://agent.example.com'
+export KUCEDR_CLOUD_ADMIN_TOKEN='<first-generated-value>'
 
-curl --fail-with-body -X PUT "$IDRA_URL/config/provider" \
-  -H "Authorization: Bearer $IDRA_ADMIN_TOKEN" \
+curl --fail-with-body -X PUT "$KUCEDR_CLOUD_URL/config/provider" \
+  -H "Authorization: Bearer $KUCEDR_CLOUD_ADMIN_TOKEN" \
   -H 'Content-Type: application/json' \
   --data '{
     "provider": "openai",
@@ -91,20 +91,20 @@ curl --fail-with-body -X PUT "$IDRA_URL/config/provider" \
   }'
 ```
 
-The response contains only provider metadata and `hasApiKey`; it never returns the key. Idra encrypts the provider configuration with `IDRA_CONFIG_KEY` before writing it to the data volume.
+The response contains only provider metadata and `hasApiKey`; it never returns the key. Idra encrypts the provider configuration with `KUCEDR_CLOUD_CONFIG_KEY` before writing it to the data volume.
 
 Inspect the current provider state, registered clients, and OAuth coordinates from the trusted operator shell:
 
 ```bash
-curl --fail-with-body "$IDRA_URL/config" \
-  -H "Authorization: Bearer $IDRA_ADMIN_TOKEN"
+curl --fail-with-body "$KUCEDR_CLOUD_URL/config" \
+  -H "Authorization: Bearer $KUCEDR_CLOUD_ADMIN_TOKEN"
 ```
 
 To change only the model for the currently configured provider, omit `apiKey`; Idra keeps the encrypted key already stored for that provider:
 
 ```bash
-curl --fail-with-body -X PUT "$IDRA_URL/config/provider" \
-  -H "Authorization: Bearer $IDRA_ADMIN_TOKEN" \
+curl --fail-with-body -X PUT "$KUCEDR_CLOUD_URL/config/provider" \
+  -H "Authorization: Bearer $KUCEDR_CLOUD_ADMIN_TOKEN" \
   -H 'Content-Type: application/json' \
   --data '{"provider":"openai","model":"<new-model-id>"}'
 ```
@@ -112,8 +112,8 @@ curl --fail-with-body -X PUT "$IDRA_URL/config/provider" \
 Changing to a different provider requires that provider's API key. To remove the provider configuration:
 
 ```bash
-curl --fail-with-body -X DELETE "$IDRA_URL/config/provider" \
-  -H "Authorization: Bearer $IDRA_ADMIN_TOKEN"
+curl --fail-with-body -X DELETE "$KUCEDR_CLOUD_URL/config/provider" \
+  -H "Authorization: Bearer $KUCEDR_CLOUD_ADMIN_TOKEN"
 ```
 
 Removing the provider prevents new agent runs until another provider is configured.
@@ -123,25 +123,25 @@ Removing the provider prevents new agent runs until another provider is configur
 Fetch the public Agent Card and OAuth documents before registering or requesting a token:
 
 ```bash
-curl --fail-with-body "$IDRA_URL/.well-known/agent-card.json"
-curl --fail-with-body "$IDRA_URL/.well-known/oauth-authorization-server"
-curl --fail-with-body "$IDRA_URL/.well-known/oauth-protected-resource/a2a"
-curl --fail-with-body "$IDRA_URL/.well-known/jwks.json"
+curl --fail-with-body "$KUCEDR_CLOUD_URL/.well-known/agent-card.json"
+curl --fail-with-body "$KUCEDR_CLOUD_URL/.well-known/oauth-authorization-server"
+curl --fail-with-body "$KUCEDR_CLOUD_URL/.well-known/oauth-protected-resource/a2a"
+curl --fail-with-body "$KUCEDR_CLOUD_URL/.well-known/jwks.json"
 ```
 
 Verify that the documents advertise:
 
 - `HTTP+JSON` protocol binding and protocol version `1.0`;
-- the exact interface URL `$IDRA_URL/a2a`;
-- the exact OAuth issuer `$IDRA_URL` and the metadata-provided token endpoint;
+- the exact interface URL `$KUCEDR_CLOUD_URL/a2a`;
+- the exact OAuth issuer `$KUCEDR_CLOUD_URL` and the metadata-provided token endpoint;
 - `private_key_jwt` client authentication with EdDSA;
-- the exact protected resource `$IDRA_URL/a2a` and scope `a2a.invoke`; and
+- the exact protected resource `$KUCEDR_CLOUD_URL/a2a` and scope `a2a.invoke`; and
 - streaming support.
 
 An unauthenticated request to the exact A2A resource returns the protected-resource discovery challenge. The `401 Unauthorized` response is expected:
 
 ```bash
-curl -i "$IDRA_URL/a2a"
+curl -i "$KUCEDR_CLOUD_URL/a2a"
 ```
 
 Calling agents should follow the Agent Card's `oauth2MetadataUrl` and use the returned `token_endpoint` instead of assuming Idra's endpoint path.
@@ -172,10 +172,10 @@ Create `register-client.mjs` in the trusted operator environment:
 ```js
 import { readFileSync } from 'node:fs';
 
-const response = await fetch(`${process.env.IDRA_URL}/config/clients`, {
+const response = await fetch(`${process.env.KUCEDR_CLOUD_URL}/config/clients`, {
 	method: 'POST',
 	headers: {
-		Authorization: `Bearer ${process.env.IDRA_ADMIN_TOKEN}`,
+		Authorization: `Bearer ${process.env.KUCEDR_CLOUD_ADMIN_TOKEN}`,
 		'Content-Type': 'application/json',
 	},
 	body: JSON.stringify({
@@ -196,8 +196,8 @@ node register-client.mjs
 Return the `clientId` and public Idra URL to the calling-agent environment through a trusted channel:
 
 ```bash
-export IDRA_URL='https://agent.example.com'
-export IDRA_CLIENT_ID='<returned-clientId>'
+export KUCEDR_CLOUD_URL='https://agent.example.com'
+export KUCEDR_CLOUD_CLIENT_ID='<returned-clientId>'
 ```
 
 The administrator can confirm the registration with authenticated `GET /config`. Registering the same public key again creates a new client identity; it does not restore access to tasks owned by a deleted identity.
@@ -215,9 +215,9 @@ import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { importJWK, SignJWT } from 'jose';
 
-const configuredUrl = process.env.IDRA_URL;
-const clientId = process.env.IDRA_CLIENT_ID;
-if (!configuredUrl || !clientId) throw new Error('IDRA_URL and IDRA_CLIENT_ID are required.');
+const configuredUrl = process.env.KUCEDR_CLOUD_URL;
+const clientId = process.env.KUCEDR_CLOUD_CLIENT_ID;
+if (!configuredUrl || !clientId) throw new Error('KUCEDR_CLOUD_URL and KUCEDR_CLOUD_CLIENT_ID are required.');
 
 const baseUrl = new URL(configuredUrl).origin;
 const cardResponse = await fetch(`${baseUrl}/.well-known/agent-card.json`);
@@ -226,7 +226,7 @@ const card = await cardResponse.json();
 const metadataUrl = card.securitySchemes?.oauth2?.oauth2SecurityScheme?.oauth2MetadataUrl;
 if (typeof metadataUrl !== 'string') throw new Error('Agent Card has no OAuth metadata URL.');
 if (new URL(metadataUrl).origin !== baseUrl) {
-	throw new Error('OAuth metadata URL does not match IDRA_URL.');
+	throw new Error('OAuth metadata URL does not match KUCEDR_CLOUD_URL.');
 }
 
 const metadataResponse = await fetch(metadataUrl);
@@ -237,7 +237,7 @@ if (
 	typeof metadata.token_endpoint !== 'string' ||
 	new URL(metadata.token_endpoint).origin !== baseUrl
 ) {
-	throw new Error('OAuth metadata does not match IDRA_URL.');
+	throw new Error('OAuth metadata does not match KUCEDR_CLOUD_URL.');
 }
 if (!metadata.token_endpoint_auth_methods_supported?.includes('private_key_jwt')) {
 	throw new Error('Idra does not advertise private_key_jwt.');
@@ -251,7 +251,7 @@ if (
 	!resourceMetadata.authorization_servers?.includes(baseUrl) ||
 	!resourceMetadata.scopes_supported?.includes('a2a.invoke')
 ) {
-	throw new Error('Protected-resource metadata does not match IDRA_URL.');
+	throw new Error('Protected-resource metadata does not match KUCEDR_CLOUD_URL.');
 }
 
 const tokenEndpoint = metadata.token_endpoint;
@@ -297,7 +297,7 @@ process.stdout.write(token.access_token);
 Acquire a token immediately before calling A2A:
 
 ```bash
-export IDRA_TOKEN="$(node get-token.mjs)"
+export KUCEDR_CLOUD_TOKEN="$(node get-token.mjs)"
 ```
 
 The token expires after five minutes and there is no refresh token. Generate a fresh assertion with a unique `jti` for every token request. Idra persists a SHA-256 digest of the client ID and assertion `jti`, then rejects reuse across normal restarts.
@@ -309,9 +309,9 @@ The token expires after five minutes and there is no refresh token. Generate a f
 Use `message:stream` to receive Server-Sent Events while Idra works:
 
 ```bash
-curl -N "$IDRA_URL/a2a/message:stream" \
+curl -N "$KUCEDR_CLOUD_URL/a2a/message:stream" \
   -H 'A2A-Version: 1.0' \
-  -H "Authorization: Bearer $IDRA_TOKEN" \
+  -H "Authorization: Bearer $KUCEDR_CLOUD_TOKEN" \
   -H 'Content-Type: application/a2a+json' \
   -H 'Accept: text/event-stream' \
   --data '{
@@ -342,9 +342,9 @@ Internal reasoning and tool details are not returned through A2A.
 Copy the `contextId` from the first task event and include it in the next message:
 
 ```bash
-curl -N "$IDRA_URL/a2a/message:stream" \
+curl -N "$KUCEDR_CLOUD_URL/a2a/message:stream" \
   -H 'A2A-Version: 1.0' \
-  -H "Authorization: Bearer $IDRA_TOKEN" \
+  -H "Authorization: Bearer $KUCEDR_CLOUD_TOKEN" \
   -H 'Content-Type: application/a2a+json' \
   -H 'Accept: text/event-stream' \
   --data '{
@@ -369,9 +369,9 @@ Idra creates a new task for each message but reuses the conversation associated 
 Use `message:send` when you prefer one JSON response instead of an SSE stream:
 
 ```bash
-curl --fail-with-body "$IDRA_URL/a2a/message:send" \
+curl --fail-with-body "$KUCEDR_CLOUD_URL/a2a/message:send" \
   -H 'A2A-Version: 1.0' \
-  -H "Authorization: Bearer $IDRA_TOKEN" \
+  -H "Authorization: Bearer $KUCEDR_CLOUD_TOKEN" \
   -H 'Content-Type: application/a2a+json' \
   --data '{
     "message": {
@@ -399,9 +399,9 @@ All commands in this section require the A2A version and bearer token headers. T
 ### List tasks
 
 ```bash
-curl --fail-with-body "$IDRA_URL/a2a/tasks" \
+curl --fail-with-body "$KUCEDR_CLOUD_URL/a2a/tasks" \
   -H 'A2A-Version: 1.0' \
-  -H "Authorization: Bearer $IDRA_TOKEN"
+  -H "Authorization: Bearer $KUCEDR_CLOUD_TOKEN"
 ```
 
 ### Get one task
@@ -409,26 +409,26 @@ curl --fail-with-body "$IDRA_URL/a2a/tasks" \
 ```bash
 export TASK_ID='<task-id>'
 
-curl --fail-with-body "$IDRA_URL/a2a/tasks/$TASK_ID" \
+curl --fail-with-body "$KUCEDR_CLOUD_URL/a2a/tasks/$TASK_ID" \
   -H 'A2A-Version: 1.0' \
-  -H "Authorization: Bearer $IDRA_TOKEN"
+  -H "Authorization: Bearer $KUCEDR_CLOUD_TOKEN"
 ```
 
 ### Subscribe to an active task
 
 ```bash
-curl -N -X POST "$IDRA_URL/a2a/tasks/$TASK_ID:subscribe" \
+curl -N -X POST "$KUCEDR_CLOUD_URL/a2a/tasks/$TASK_ID:subscribe" \
   -H 'A2A-Version: 1.0' \
-  -H "Authorization: Bearer $IDRA_TOKEN" \
+  -H "Authorization: Bearer $KUCEDR_CLOUD_TOKEN" \
   -H 'Accept: text/event-stream'
 ```
 
 ### Cancel an active task
 
 ```bash
-curl --fail-with-body -X POST "$IDRA_URL/a2a/tasks/$TASK_ID:cancel" \
+curl --fail-with-body -X POST "$KUCEDR_CLOUD_URL/a2a/tasks/$TASK_ID:cancel" \
   -H 'A2A-Version: 1.0' \
-  -H "Authorization: Bearer $IDRA_TOKEN"
+  -H "Authorization: Bearer $KUCEDR_CLOUD_TOKEN"
 ```
 
 Cancellation can fail if the task is already terminal or is no longer active.
@@ -440,8 +440,8 @@ Delete the client registration from the trusted operator environment:
 ```bash
 export REVOKED_CLIENT_ID='<client-id>'
 
-curl --fail-with-body -X DELETE "$IDRA_URL/config/clients/$REVOKED_CLIENT_ID" \
-  -H "Authorization: Bearer $IDRA_ADMIN_TOKEN"
+curl --fail-with-body -X DELETE "$KUCEDR_CLOUD_URL/config/clients/$REVOKED_CLIENT_ID" \
+  -H "Authorization: Bearer $KUCEDR_CLOUD_ADMIN_TOKEN"
 ```
 
 Subsequent requests using that client's access tokens are rejected immediately. Revocation does not terminate an already admitted HTTP request, active stream, or running task. Deleting a client also makes its existing tasks and conversations inaccessible through the API; the stored records remain until their normal retention cleanup, and registering a new client does not inherit them.
@@ -461,11 +461,11 @@ import { randomUUID } from 'node:crypto';
 import { Role } from '@a2a-js/sdk';
 import { ClientFactory, RestTransportFactory } from '@a2a-js/sdk/client';
 
-const baseUrl = process.env.IDRA_URL;
-const token = process.env.IDRA_TOKEN;
+const baseUrl = process.env.KUCEDR_CLOUD_URL;
+const token = process.env.KUCEDR_CLOUD_TOKEN;
 
 if (!baseUrl || !token) {
-	throw new Error('IDRA_URL and IDRA_TOKEN are required.');
+	throw new Error('KUCEDR_CLOUD_URL and KUCEDR_CLOUD_TOKEN are required.');
 }
 
 const client = await new ClientFactory({
@@ -549,7 +549,7 @@ Do not use `docker compose down --volumes` unless you intend to delete the works
 
 ### Compose reports a missing variable
 
-`IDRA_PUBLIC_URL`, `IDRA_ADMIN_TOKEN`, and `IDRA_CONFIG_KEY` must have non-empty values. Provider, model, and API key values are entered in the browser setup page after administrator registration. Check the file, then run:
+`KUCEDR_CLOUD_PUBLIC_URL`, `KUCEDR_CLOUD_ADMIN_TOKEN`, and `KUCEDR_CLOUD_CONFIG_KEY` must have non-empty values. Provider, model, and API key values are entered in the browser setup page after administrator registration. Check the file, then run:
 
 ```bash
 docker compose config --quiet
@@ -563,15 +563,15 @@ Inspect the container log:
 docker compose logs app
 ```
 
-Common causes are an administrator token shorter than 32 bytes, a configuration key that does not encode exactly 32 bytes, replacing the key that encrypted the existing `secure-config.json`, or an invalid `IDRA_PUBLIC_URL`. Restore the exact backed-up configuration key when persisted data already exists. Production public URLs must use HTTPS and must not contain a path, query, credentials, or fragment.
+Common causes are an administrator token shorter than 32 bytes, a configuration key that does not encode exactly 32 bytes, replacing the key that encrypted the existing `secure-config.json`, or an invalid `KUCEDR_CLOUD_PUBLIC_URL`. Restore the exact backed-up configuration key when persisted data already exists. Production public URLs must use HTTPS and must not contain a path, query, credentials, or fragment.
 
 ### An A2A request returns `401 Unauthorized`
 
 Acquire a fresh token with `get-token.mjs` and confirm that the request uses `Authorization: Bearer <token>`. From the trusted operator shell, check that the client still exists with:
 
 ```bash
-curl --fail-with-body "$IDRA_URL/config" \
-  -H "Authorization: Bearer $IDRA_ADMIN_TOKEN"
+curl --fail-with-body "$KUCEDR_CLOUD_URL/config" \
+  -H "Authorization: Bearer $KUCEDR_CLOUD_ADMIN_TOKEN"
 ```
 
 An A2A access token cannot perform this configuration check.

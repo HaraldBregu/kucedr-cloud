@@ -6,9 +6,9 @@ import test from 'node:test';
 import { SettingsService } from '../src/main/shared/settings';
 
 test('SettingsService manages a persistent JSON settings file', () => {
-	const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'idra-settings-'));
+	const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'kucedr-cloud-settings-'));
 	const filePath = path.join(directory, 'settings.json');
-	const previousDataDirectory = process.env.IDRA_DATA_DIR;
+	const previousDataDirectory = process.env.KUCEDR_CLOUD_DATA_DIR;
 
 	try {
 		const settings = new SettingsService(filePath);
@@ -29,15 +29,15 @@ test('SettingsService manages a persistent JSON settings file', () => {
 		assert.deepEqual(reloaded.get('appearance'), { theme: 'dark' });
 
 		const defaultDirectory = path.join(directory, 'default');
-		process.env.IDRA_DATA_DIR = defaultDirectory;
+		process.env.KUCEDR_CLOUD_DATA_DIR = defaultDirectory;
 		new SettingsService();
 		assert.deepEqual(
 			JSON.parse(fs.readFileSync(path.join(defaultDirectory, 'settings.json'), 'utf8')),
 			{}
 		);
 	} finally {
-		if (previousDataDirectory === undefined) delete process.env.IDRA_DATA_DIR;
-		else process.env.IDRA_DATA_DIR = previousDataDirectory;
+		if (previousDataDirectory === undefined) delete process.env.KUCEDR_CLOUD_DATA_DIR;
+		else process.env.KUCEDR_CLOUD_DATA_DIR = previousDataDirectory;
 		fs.rmSync(directory, { recursive: true, force: true });
 	}
 });

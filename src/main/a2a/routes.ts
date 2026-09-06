@@ -8,7 +8,7 @@ import { createBearerAuthentication } from './auth';
 import { rejectUnsupportedCapabilities } from './capabilities';
 import { createAgentCard } from './card';
 import type { A2aConfig } from './config';
-import { IdraExecutor, type AgentPort } from './executor';
+import { KucedrCloudExecutor, type AgentPort } from './executor';
 import { includeListResponseFields } from './list';
 import { createTaskStore } from './store';
 import type { OAuthIssuer } from '../oauth/issuer';
@@ -38,7 +38,7 @@ export async function registerA2aRoutes(
 	const handler = new DefaultRequestHandler(
 		card,
 		taskStore,
-		new IdraExecutor(agent, config.workspaceDirectory)
+		new KucedrCloudExecutor(agent, config.workspaceDirectory)
 	);
 
 	server.get('/.well-known/agent-card.json', async (_request, reply) => {

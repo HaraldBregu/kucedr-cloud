@@ -35,7 +35,7 @@ interface ActiveRun {
 	pendingDelta?: string;
 }
 
-export class IdraExecutor implements AgentExecutor {
+export class KucedrCloudExecutor implements AgentExecutor {
 	private readonly activeRuns = new Map<string, ActiveRun>();
 
 	constructor(
@@ -127,7 +127,7 @@ export class IdraExecutor implements AgentExecutor {
 		const artifact: Artifact = {
 			artifactId: 'response',
 			name: 'Response',
-			description: 'Idra response',
+			description: 'kucedr-cloud response',
 			parts: [textPart(delta)],
 			metadata: {},
 			extensions: [],
@@ -163,7 +163,7 @@ export class IdraExecutor implements AgentExecutor {
 				status: status(
 					state,
 					state === TaskState.TASK_STATE_FAILED
-						? agentMessage(taskId, run.contextId, 'Idra run failed.')
+						? agentMessage(taskId, run.contextId, 'kucedr-cloud run failed.')
 						: state === TaskState.TASK_STATE_CANCELED
 							? agentMessage(taskId, run.contextId, 'Task canceled.')
 							: undefined

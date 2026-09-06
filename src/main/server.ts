@@ -39,7 +39,7 @@ export async function createApiServer(
 	});
 	const adminToken =
 		options.storageApiToken === undefined
-			? process.env.IDRA_ADMIN_TOKEN?.trim()
+			? process.env.KUCEDR_CLOUD_ADMIN_TOKEN?.trim()
 			: options.storageApiToken?.trim();
 	const accessControl = options.accessControl ?? options.storageApiToken !== null;
 	const adminAuthentication = createAdminAuthentication(dataDirectory, adminToken);

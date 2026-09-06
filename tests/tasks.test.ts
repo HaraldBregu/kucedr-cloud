@@ -25,7 +25,7 @@ const otherContext = new ServerCallContext({
 });
 
 test('PersistentTaskStore saves, loads, filters, and paginates secure task files', async () => {
-	const root = fs.mkdtempSync(path.join(os.tmpdir(), 'idra-a2a-tasks-'));
+	const root = fs.mkdtempSync(path.join(os.tmpdir(), 'kucedr-cloud-a2a-tasks-'));
 	const directory = path.join(root, 'a2a', 'tasks');
 
 	try {
@@ -124,7 +124,7 @@ test('PersistentTaskStore saves, loads, filters, and paginates secure task files
 });
 
 test('PersistentTaskStore prunes expired terminal tasks and fails interrupted tasks on restart', async () => {
-	const root = fs.mkdtempSync(path.join(os.tmpdir(), 'idra-a2a-recovery-'));
+	const root = fs.mkdtempSync(path.join(os.tmpdir(), 'kucedr-cloud-a2a-recovery-'));
 	const directory = path.join(root, 'a2a', 'tasks');
 
 	try {

@@ -5,7 +5,7 @@ export function createAgentCard(
 	oauth?: { metadataUrl: string; tokenEndpoint: string; scope: string }
 ): AgentCard {
 	return {
-		name: 'Idra',
+		name: 'kucedr-cloud',
 		description: 'A personal assistant that can work with files in its private workspace.',
 		supportedInterfaces: [
 			{
@@ -37,7 +37,7 @@ export function createAgentCard(
 										value: {
 											tokenUrl: oauth.tokenEndpoint,
 											refreshUrl: '',
-											scopes: { [oauth.scope]: 'Invoke Idra and access caller-owned tasks.' },
+											scopes: { [oauth.scope]: 'Invoke kucedr-cloud and access caller-owned tasks.' },
 										},
 									},
 								},
@@ -50,7 +50,7 @@ export function createAgentCard(
 						scheme: {
 							$case: 'httpAuthSecurityScheme',
 							value: {
-								description: 'Dedicated Idra agent token.',
+								description: 'Dedicated kucedr-cloud agent token.',
 								scheme: 'Bearer',
 								bearerFormat: '',
 							},

@@ -34,7 +34,7 @@ export function registerAccessRoutes(
 					properties: {
 						accessKey: {
 							type: 'string',
-							pattern: '^idra_[A-Za-z0-9_-]{43}$',
+							pattern: '^kucedr-cloud_[A-Za-z0-9_-]{43}$',
 						},
 					},
 				},

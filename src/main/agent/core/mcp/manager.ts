@@ -46,7 +46,7 @@ export class McpManager {
 	}
 
 	private async connect(server: McpServer): Promise<Tool[]> {
-		const client = new Client({ name: 'idra', version: '1.0.2' });
+		const client = new Client({ name: 'kucedr-cloud', version: '1.0.2' });
 		const transport =
 			server.transport === 'stdio'
 				? new StdioClientTransport({

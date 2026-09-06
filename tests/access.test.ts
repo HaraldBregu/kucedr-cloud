@@ -16,7 +16,7 @@ const agent = {
 };
 
 test('first-run access setup protects the UI and persists login across restarts', async () => {
-	const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'idra-access-'));
+	const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'kucedr-cloud-access-'));
 	const server = await createApiServer(agent, {
 		accessControl: true,
 		dataDirectory: directory,
@@ -31,7 +31,7 @@ test('first-run access setup protects the UI and persists login across restarts'
 	} as Crypto);
 
 	try {
-		assert.match(accessKey, /^idra_[A-Za-z0-9_-]{43}$/);
+		assert.match(accessKey, /^kucedr-cloud_[A-Za-z0-9_-]{43}$/);
 		const root = await server.inject({ method: 'GET', url: '/' });
 		assert.equal(root.statusCode, 302);
 		assert.equal(root.headers.location, '/access');
@@ -64,7 +64,7 @@ test('first-run access setup protects the UI and persists login across restarts'
 		assert.equal(saved.statusCode, 204);
 		const setCookie = saved.headers['set-cookie'];
 		assert.ok(setCookie);
-		assert.match(setCookie, /^idra_session=/);
+		assert.match(setCookie, /^kucedr-cloud_session=/);
 		assert.match(setCookie, /HttpOnly/);
 		assert.match(setCookie, /SameSite=Strict/);
 		assert.match(setCookie, /Max-Age=31536000/);
@@ -118,7 +118,7 @@ test('first-run access setup protects the UI and persists login across restarts'
 			headers: { cookie },
 		});
 		assert.equal(logout.statusCode, 204);
-		assert.match(logout.headers['set-cookie'] ?? '', /^idra_session=;/);
+		assert.match(logout.headers['set-cookie'] ?? '', /^kucedr-cloud_session=;/);
 		assert.match(logout.headers['set-cookie'] ?? '', /HttpOnly/);
 		assert.match(logout.headers['set-cookie'] ?? '', /SameSite=Strict/);
 		assert.match(logout.headers['set-cookie'] ?? '', /Max-Age=0/);
@@ -130,7 +130,7 @@ test('first-run access setup protects the UI and persists login across restarts'
 		);
 
 		const originalAccessFile = fs.readFileSync(accessFile, 'utf8');
-		const wrongKey = `idra_${'A'.repeat(43)}`;
+		const wrongKey = `kucedr-cloud_${'A'.repeat(43)}`;
 		assert.equal(
 			(
 				await server.inject({
@@ -167,7 +167,7 @@ test('first-run access setup protects the UI and persists login across restarts'
 				payload: { accessKey },
 			});
 			assert.equal(relogin.statusCode, 204);
-			assert.match(relogin.headers['set-cookie'] ?? '', /^idra_session=/);
+			assert.match(relogin.headers['set-cookie'] ?? '', /^kucedr-cloud_session=/);
 		} finally {
 			await restartedServer.close();
 		}

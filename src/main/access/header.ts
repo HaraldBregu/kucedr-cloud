@@ -1,6 +1,6 @@
 export function accessSessionHeader(session: string, secure: boolean): string {
 	return [
-		`idra_session=${session}`,
+		`kucedr-cloud_session=${session}`,
 		'HttpOnly',
 		'SameSite=Strict',
 		'Path=/',

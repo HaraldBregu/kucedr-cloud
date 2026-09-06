@@ -14,12 +14,12 @@ import { RequestLimiter } from '../src/main/oauth/limit';
 
 const ADMIN_TOKEN = 'config-ui-admin-token-123456789012345';
 const CONFIGURATION_KEY = Buffer.from('22'.repeat(32), 'hex');
-const PUBLIC_URL = 'https://idra.example';
+const PUBLIC_URL = 'https://kucedr-cloud.example';
 const USERNAME = 'administrator';
 const PASSWORD = 'correct horse battery staple';
 
 test('config UI registers one administrator and protects browser sessions', async () => {
-	const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'idra-config-ui-'));
+	const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'kucedr-cloud-config-ui-'));
 	let server = createServer(directory);
 	try {
 		const initialRoot = await server.inject({ method: 'GET', url: '/' });
@@ -43,7 +43,7 @@ test('config UI registers one administrator and protects browser sessions', asyn
 		assert.equal(html.headers['cache-control'], 'no-store');
 		assert.match(html.body, /Create the administrator/);
 		assert.match(html.body, /autocomplete="new-password"/);
-		assert.doesNotMatch(html.body, /setup-token|IDRA_ADMIN_TOKEN/);
+		assert.doesNotMatch(html.body, /setup-token|KUCEDR_CLOUD_ADMIN_TOKEN/);
 		assert.doesNotMatch(html.body, new RegExp(ADMIN_TOKEN));
 		const prematureLogin = await server.inject({ method: 'GET', url: '/config/login' });
 		assert.equal(prematureLogin.statusCode, 302);
@@ -94,7 +94,7 @@ test('config UI registers one administrator and protects browser sessions', asyn
 		assert.equal(registrationBody.username, USERNAME);
 		assert.match(registrationBody.csrfToken, /^[A-Za-z0-9_-]{43}$/);
 		const cookie = sessionCookie(registration.headers['set-cookie']);
-		assert.match(registration.headers['set-cookie'] ?? '', /__Host-idra_config=/);
+		assert.match(registration.headers['set-cookie'] ?? '', /__Host-kucedr-cloud_config=/);
 		assert.match(registration.headers['set-cookie'] ?? '', /HttpOnly/);
 		assert.match(registration.headers['set-cookie'] ?? '', /SameSite=Strict/);
 		assert.match(registration.headers['set-cookie'] ?? '', /Secure/);
@@ -111,7 +111,7 @@ test('config UI registers one administrator and protects browser sessions', asyn
 		const invalidSession = await server.inject({
 			method: 'GET',
 			url: '/config',
-			headers: { accept: 'text/html', cookie: '__Host-idra_config=invalid' },
+			headers: { accept: 'text/html', cookie: '__Host-kucedr-cloud_config=invalid' },
 		});
 		assert.equal(invalidSession.statusCode, 302);
 		assert.equal(invalidSession.headers.location, '/config/login');
@@ -206,7 +206,7 @@ test('config UI registers one administrator and protects browser sessions', asyn
 					headers: {
 						cookie,
 						origin: 'https://attacker.example',
-						'x-idra-csrf': registrationBody.csrfToken,
+						'x-kucedr-cloud-csrf': registrationBody.csrfToken,
 					},
 					payload: providerPayload,
 				})
@@ -221,7 +221,7 @@ test('config UI registers one administrator and protects browser sessions', asyn
 					headers: {
 						cookie,
 						origin: PUBLIC_URL,
-						'x-idra-csrf': registrationBody.csrfToken,
+						'x-kucedr-cloud-csrf': registrationBody.csrfToken,
 					},
 					payload: providerPayload,
 				})
@@ -253,7 +253,7 @@ test('config UI registers one administrator and protects browser sessions', asyn
 					headers: {
 						cookie,
 						origin: PUBLIC_URL,
-						'x-idra-csrf': registrationBody.csrfToken,
+						'x-kucedr-cloud-csrf': registrationBody.csrfToken,
 					},
 				})
 			).statusCode,
@@ -307,7 +307,7 @@ test('config UI registers one administrator and protects browser sessions', asyn
 		const logout = await server.inject({
 			method: 'DELETE',
 			url: '/config/auth/session',
-			headers: { cookie, origin: PUBLIC_URL, 'x-idra-csrf': registrationBody.csrfToken },
+			headers: { cookie, origin: PUBLIC_URL, 'x-kucedr-cloud-csrf': registrationBody.csrfToken },
 		});
 		assert.equal(logout.statusCode, 204);
 		assert.match(logout.headers['set-cookie'] ?? '', /Max-Age=0/);
@@ -350,7 +350,7 @@ test('config UI registers one administrator and protects browser sessions', asyn
 
 test('loopback HTTP uses a non-Secure development cookie', () => {
 	const cookie = setConfigurationCookie('token', 'http://127.0.0.1:3000');
-	assert.match(cookie, /^idra_config_session=/);
+	assert.match(cookie, /^kucedr-cloud_config_session=/);
 	assert.doesNotMatch(cookie, /; Secure/);
 });
 

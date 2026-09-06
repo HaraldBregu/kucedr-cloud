@@ -12,7 +12,7 @@ import { providerBaseUrl } from '../src/main/provider/base';
 import { registerProviderRoutes } from '../src/main/provider/routes';
 
 test('provider API persists only supported provider configurations without returning keys', async () => {
-	const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'idra-provider-'));
+	const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'kucedr-cloud-provider-'));
 	const server = Fastify();
 	const headers = { authorization: 'Bearer provider-test-token' };
 	const secret = 'sk-provider-secret-sentinel';
@@ -109,14 +109,14 @@ test('provider API persists only supported provider configurations without retur
 });
 
 test('runtime resolves only encrypted provider configuration', () => {
-	const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'idra-provider-runtime-'));
+	const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'kucedr-cloud-provider-runtime-'));
 	const previous = {
-		dataDirectory: process.env.IDRA_DATA_DIR,
-		configurationKey: process.env.IDRA_CONFIG_KEY,
+		dataDirectory: process.env.KUCEDR_CLOUD_DATA_DIR,
+		configurationKey: process.env.KUCEDR_CLOUD_CONFIG_KEY,
 	};
 	try {
-		process.env.IDRA_DATA_DIR = directory;
-		delete process.env.IDRA_CONFIG_KEY;
+		process.env.KUCEDR_CLOUD_DATA_DIR = directory;
+		delete process.env.KUCEDR_CLOUD_CONFIG_KEY;
 		fs.writeFileSync(
 			path.join(directory, 'provider.json'),
 			JSON.stringify({ provider: 'deepseek', model: 'deepseek-model', apiKey: 'deepseek-key' }),
@@ -127,7 +127,7 @@ test('runtime resolves only encrypted provider configuration', () => {
 		assert.equal(getModelId(), undefined);
 		assert.equal(getResolvedProvider('deepseek'), undefined);
 
-		process.env.IDRA_CONFIG_KEY = '44'.repeat(32);
+		process.env.KUCEDR_CLOUD_CONFIG_KEY = '44'.repeat(32);
 		const secureStore = new ConfigurationStore(directory, Buffer.from('44'.repeat(32), 'hex'));
 		assert.equal(getProviderId(), undefined);
 		assert.equal(getModelId(), undefined);
@@ -154,8 +154,8 @@ test('runtime resolves only encrypted provider configuration', () => {
 		assert.equal(providerBaseUrl('deepseek'), 'https://api.deepseek.com');
 	} finally {
 		for (const [name, value] of [
-			['IDRA_DATA_DIR', previous.dataDirectory],
-			['IDRA_CONFIG_KEY', previous.configurationKey],
+			['KUCEDR_CLOUD_DATA_DIR', previous.dataDirectory],
+			['KUCEDR_CLOUD_CONFIG_KEY', previous.configurationKey],
 		] as const) {
 			if (value === undefined) delete process.env[name];
 			else process.env[name] = value;

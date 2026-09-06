@@ -7,7 +7,7 @@ import { workspaceTools } from '../src/main/agent/workspace/tools';
 import type { Tool } from '../src/main/agent/types';
 
 test('root-bound workspace tools read, write, and edit relative files', async () => {
-	const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'idra-workspace-tools-'));
+	const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'kucedr-cloud-workspace-tools-'));
 	const root = path.join(directory, 'workspace');
 	fs.mkdirSync(root);
 	fs.writeFileSync(path.join(root, 'existing.txt'), 'before');
@@ -35,7 +35,7 @@ test('root-bound workspace tools read, write, and edit relative files', async ()
 });
 
 test('root-bound workspace tools reject invalid and escaping paths', async () => {
-	const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'idra-workspace-policy-'));
+	const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'kucedr-cloud-workspace-policy-'));
 	const root = path.join(directory, 'workspace');
 	const outside = path.join(directory, 'outside');
 	const sentinel = path.join(outside, 'sentinel.txt');

@@ -28,7 +28,7 @@ const document: McpDocument = {
 };
 
 test('MCP store persists HTTP and stdio configuration securely', () => {
-	const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'idra-mcp-store-'));
+	const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'kucedr-cloud-mcp-store-'));
 	try {
 		writeMcp(directory, document);
 		assert.deepEqual(readMcp(directory), document);
@@ -50,7 +50,7 @@ test('MCP manager ignores disabled manual servers', async () => {
 });
 
 test('authenticated MCP API replaces the complete manual document', async () => {
-	const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'idra-mcp-api-'));
+	const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'kucedr-cloud-mcp-api-'));
 	let configured: McpServer[] = [];
 	const server = await createApiServer(
 		{

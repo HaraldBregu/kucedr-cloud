@@ -8,8 +8,8 @@ import { createAdminAuthentication } from '../src/main/admin/authenticate';
 import { registerStorageRoutes } from '../src/main/storage/routes';
 
 test('storage API manages persistent settings and files inside the data directory', async () => {
-	const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'idra-storage-'));
-	const outsideFile = path.join(directory, '..', `idra-outside-${path.basename(directory)}.txt`);
+	const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'kucedr-cloud-storage-'));
+	const outsideFile = path.join(directory, '..', `kucedr-cloud-outside-${path.basename(directory)}.txt`);
 	const server = Fastify();
 	const headers = { authorization: 'Bearer storage-test-token' };
 	const authenticate = createAdminAuthentication(directory, 'storage-test-token');
@@ -99,7 +99,7 @@ test('storage API manages persistent settings and files inside the data director
 		}
 		assert.equal(fs.existsSync(outsideFile), false);
 
-		const outsideDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'idra-storage-link-'));
+		const outsideDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'kucedr-cloud-storage-link-'));
 		try {
 			fs.symlinkSync(outsideDirectory, path.join(directory, 'files', 'link'));
 			const rejectedLink = await server.inject({

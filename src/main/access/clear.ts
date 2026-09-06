@@ -1,6 +1,6 @@
 export function clearAccessSessionHeader(secure: boolean): string {
 	return [
-		'idra_session=',
+		'kucedr-cloud_session=',
 		'HttpOnly',
 		'SameSite=Strict',
 		'Path=/',

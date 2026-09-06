@@ -11,7 +11,7 @@ An A2A client needs only:
 - its own Ed25519 private key; and
 - a short-lived OAuth access token obtained with that key.
 
-The client must never receive or send the model provider API key, `IDRA_ADMIN_TOKEN`, or `IDRA_CONFIG_KEY`. Idra uses the provider API key internally when invoking the configured model. The administrator token is used only by a trusted operator to register or revoke clients.
+The client must never receive or send the model provider API key, `KUCEDR_CLOUD_ADMIN_TOKEN`, or `KUCEDR_CLOUD_CONFIG_KEY`. Idra uses the provider API key internally when invoking the configured model. The administrator token is used only by a trusted operator to register or revoke clients.
 
 ## Interaction flow
 
@@ -56,8 +56,8 @@ node generate-key.mjs
 Give `client-public.jwk` to the Idra administrator. Never send `client-private.jwk`. After the administrator registers the public key, set the returned client ID and Idra URL:
 
 ```bash
-export IDRA_URL='https://agent.example.com'
-export IDRA_CLIENT_ID='<registered-client-id>'
+export KUCEDR_CLOUD_URL='https://agent.example.com'
+export KUCEDR_CLOUD_CLIENT_ID='<registered-client-id>'
 ```
 
 Create the following complete client:
@@ -68,9 +68,9 @@ import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { importJWK, SignJWT } from 'jose';
 
-const baseUrl = new URL(process.env.IDRA_URL).origin;
-const clientId = process.env.IDRA_CLIENT_ID;
-if (!clientId) throw new Error('IDRA_CLIENT_ID is required.');
+const baseUrl = new URL(process.env.KUCEDR_CLOUD_URL).origin;
+const clientId = process.env.KUCEDR_CLOUD_CLIENT_ID;
+if (!clientId) throw new Error('KUCEDR_CLOUD_CLIENT_ID is required.');
 
 const cardResponse = await fetch(`${baseUrl}/.well-known/agent-card.json`);
 if (!cardResponse.ok) throw new Error(await cardResponse.text());
@@ -85,7 +85,7 @@ if (!metadataResponse.ok) throw new Error(await metadataResponse.text());
 const metadata = await metadataResponse.json();
 const tokenEndpoint = metadata.token_endpoint;
 if (metadata.issuer !== baseUrl || new URL(tokenEndpoint).origin !== baseUrl) {
-	throw new Error('OAuth metadata does not match IDRA_URL.');
+	throw new Error('OAuth metadata does not match KUCEDR_CLOUD_URL.');
 }
 
 const privateJwk = JSON.parse(readFileSync('client-private.jwk', 'utf8'));
@@ -177,7 +177,7 @@ The administrator registers it with:
 
 ```http
 POST /config/clients
-Authorization: Bearer <IDRA_ADMIN_TOKEN>
+Authorization: Bearer <KUCEDR_CLOUD_ADMIN_TOKEN>
 Content-Type: application/json
 
 {

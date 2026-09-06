@@ -142,7 +142,7 @@ test('API routes work through Fastify request injection', async () => {
 });
 
 test('admin token protects provider configuration and agent prompts', async () => {
-	const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'idra-server-auth-'));
+	const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'kucedr-cloud-server-auth-'));
 	const agent = {
 		async send(): Promise<string> {
 			return 'unused';

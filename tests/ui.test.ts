@@ -10,7 +10,7 @@ import { PersistenceMarker } from '../src/ui/marker.js';
 import { runSuite } from '../src/ui/suite.js';
 
 test('UI workflows exercise storage safely and restore existing data', async () => {
-	const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'idra-ui-'));
+	const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'kucedr-cloud-ui-'));
 	const server = Fastify();
 	registerStorageRoutes(server, directory, createAdminAuthentication(directory, 'ui-test-token'));
 	const api = {
@@ -63,7 +63,7 @@ test('UI workflows exercise storage safely and restore existing data', async () 
 		const prepared = await marker.prepare();
 		const verified = await marker.verify();
 		assert.equal(verified.id, prepared.id);
-		assert.equal((await api.request('/settings')).settings._idraVolumeTest.id, prepared.id);
+		assert.equal((await api.request('/settings')).settings._kucedrCloudVolumeTest.id, prepared.id);
 		assert.equal((await api.request('/files')).files[0].path, prepared.filePath);
 
 		const cleaned = await marker.cleanup();

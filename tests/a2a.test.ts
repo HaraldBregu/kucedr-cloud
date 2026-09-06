@@ -22,7 +22,7 @@ import {
 	type AgentExecutionEvent,
 } from '@a2a-js/sdk/server';
 import { resolveA2aConfig } from '../src/main/a2a/config';
-import { IdraExecutor, type AgentPort } from '../src/main/a2a/executor';
+import { KucedrCloudExecutor, type AgentPort } from '../src/main/a2a/executor';
 import { createAgentCard } from '../src/main/a2a/card';
 import { createA2aServer } from '../src/main/a2a/server';
 import { createTaskStore } from '../src/main/a2a/store';
@@ -43,7 +43,7 @@ const A2A_HEADERS = {
 };
 
 test('A2A configuration is disabled or validates paired secure settings', async () => {
-	const directory = path.join(os.tmpdir(), 'idra-a2a-config');
+	const directory = path.join(os.tmpdir(), 'kucedr-cloud-a2a-config');
 	assert.equal(
 		resolveA2aConfig({ dataDirectory: directory, token: null, publicUrl: null }),
 		undefined
@@ -57,7 +57,7 @@ test('A2A configuration is disabled or validates paired secure settings', async 
 			resolveA2aConfig({
 				dataDirectory: directory,
 				token: null,
-				publicUrl: 'https://idra.example',
+				publicUrl: 'https://kucedr-cloud.example',
 			}),
 		/configured together/
 	);
@@ -66,7 +66,7 @@ test('A2A configuration is disabled or validates paired secure settings', async 
 			resolveA2aConfig({
 				dataDirectory: directory,
 				token: 'é'.repeat(15),
-				publicUrl: 'https://idra.example',
+				publicUrl: 'https://kucedr-cloud.example',
 			}),
 		/32 UTF-8 bytes/
 	);
@@ -76,11 +76,11 @@ test('A2A configuration is disabled or validates paired secure settings', async 
 		resolveA2aConfig({
 			dataDirectory: directory,
 			token: unicodeToken,
-			publicUrl: 'https://idra.example:8443',
+			publicUrl: 'https://kucedr-cloud.example:8443',
 		}),
 		{
 			token: unicodeToken,
-			publicUrl: 'https://idra.example:8443',
+			publicUrl: 'https://kucedr-cloud.example:8443',
 			tasksDirectory: path.join(directory, 'a2a', 'tasks'),
 			workspaceDirectory: path.join(directory, 'workspace'),
 		}
@@ -92,12 +92,12 @@ test('A2A configuration is disabled or validates paired secure settings', async 
 		);
 	}
 	for (const publicUrl of [
-		'http://idra.example',
-		'https://idra.example/a2a',
-		'https://idra.example?query=yes',
-		'https://idra.example#fragment',
-		'https://user:secret@idra.example',
-		'ftp://idra.example',
+		'http://kucedr-cloud.example',
+		'https://kucedr-cloud.example/a2a',
+		'https://kucedr-cloud.example?query=yes',
+		'https://kucedr-cloud.example#fragment',
+		'https://user:secret@kucedr-cloud.example',
+		'ftp://kucedr-cloud.example',
 	]) {
 		assert.throws(
 			() => resolveA2aConfig({ dataDirectory: directory, token: AGENT_TOKEN, publicUrl }),
@@ -105,7 +105,7 @@ test('A2A configuration is disabled or validates paired secure settings', async 
 		);
 	}
 
-	const disabledDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'idra-a2a-disabled-'));
+	const disabledDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'kucedr-cloud-a2a-disabled-'));
 	const server = await createApiServer(unusedAgent(), {
 		dataDirectory: disabledDirectory,
 		storageApiToken: null,
@@ -126,7 +126,7 @@ test('A2A configuration is disabled or validates paired secure settings', async 
 });
 
 test('A2A server fails closed and exposes only discovery, OAuth, config, and A2A', async () => {
-	const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'idra-a2a-only-'));
+	const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'kucedr-cloud-a2a-only-'));
 	await assert.rejects(
 		createA2aServer(unusedAgent(), {
 			dataDirectory: directory,
@@ -134,14 +134,14 @@ test('A2A server fails closed and exposes only discovery, OAuth, config, and A2A
 			configurationKey: null,
 			publicUrl: null,
 		}),
-		/IDRA_ADMIN_TOKEN/
+		/KUCEDR_CLOUD_ADMIN_TOKEN/
 	);
 
 	const server = await createA2aServer(unusedAgent(), {
 		dataDirectory: directory,
 		adminToken: ADMIN_TOKEN,
 		configurationKey: CONFIGURATION_KEY,
-		publicUrl: 'https://idra.example',
+		publicUrl: 'https://kucedr-cloud.example',
 	});
 	server.log.level = 'silent';
 	try {
@@ -157,7 +157,7 @@ test('A2A server fails closed and exposes only discovery, OAuth, config, and A2A
 		assert.equal(challenge.statusCode, 401);
 		assert.match(
 			challenge.headers['www-authenticate'] ?? '',
-			/resource_metadata="https:\/\/idra\.example\/\.well-known\/oauth-protected-resource\/a2a"/
+			/resource_metadata="https:\/\/kucedr-cloud\.example\/\.well-known\/oauth-protected-resource\/a2a"/
 		);
 		assert.doesNotMatch(
 			(
@@ -191,7 +191,7 @@ test('A2A server fails closed and exposes only discovery, OAuth, config, and A2A
 				await server.inject({
 					method: 'GET',
 					url: '/a2a',
-					headers: { 'a2a-version': '1.0', cookie: '__Host-idra_config=not-an-a2a-token' },
+					headers: { 'a2a-version': '1.0', cookie: '__Host-kucedr-cloud_config=not-an-a2a-token' },
 				})
 			).statusCode,
 			401
@@ -221,11 +221,11 @@ test('A2A server fails closed and exposes only discovery, OAuth, config, and A2A
 });
 
 test('OAuth metadata and token errors follow the client-credentials profile', async () => {
-	const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'idra-oauth-metadata-'));
+	const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'kucedr-cloud-oauth-metadata-'));
 	const server = Fastify();
 	const issuer = new OAuthIssuer(
 		new ConfigurationStore(directory, Buffer.from(CONFIGURATION_KEY, 'hex')),
-		'https://idra.example'
+		'https://kucedr-cloud.example'
 	);
 	registerOAuthRoutes(server, issuer);
 	try {
@@ -251,7 +251,7 @@ test(
 	'A2A HTTP routes expose discovery while enforcing protocol, authentication, and allowlists',
 	{ timeout: 15_000 },
 	async (context) => {
-		const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'idra-a2a-http-'));
+		const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'kucedr-cloud-a2a-http-'));
 		const secret = 'internal-tool-secret-sentinel';
 		const calls: Array<{ message: string; options: AgentSendOptions }> = [];
 		const agent: AgentPort = {
@@ -280,12 +280,12 @@ test(
 				});
 				emit(options, {
 					type: 'text_delta',
-					delta: 'Hello from Idra',
+					delta: 'Hello from kucedr-cloud',
 					agentId,
 					runId: options.runId ?? '',
 				});
 				emit(options, finished('end_turn', agentId, options.runId ?? ''));
-				return 'Hello from Idra';
+				return 'Hello from kucedr-cloud';
 			},
 			cancel() {
 				return true;
@@ -296,7 +296,7 @@ test(
 			dataDirectory: directory,
 			storageApiToken: ADMIN_TOKEN,
 			agentToken: AGENT_TOKEN,
-			publicUrl: 'https://idra.example',
+			publicUrl: 'https://kucedr-cloud.example',
 		});
 		server.log.level = 'silent';
 
@@ -320,10 +320,10 @@ test(
 			assert.equal(cardResponse.headers.get('cache-control'), 'public, max-age=300');
 			assert.equal(cardResponse.headers.get('access-control-allow-origin'), null);
 			const card = (await cardResponse.json()) as Record<string, any>;
-			assert.equal(card.name, 'Idra');
+			assert.equal(card.name, 'kucedr-cloud');
 			assert.deepEqual(card.supportedInterfaces, [
 				{
-					url: 'https://idra.example/a2a',
+					url: 'https://kucedr-cloud.example/a2a',
 					protocolBinding: 'HTTP+JSON',
 					protocolVersion: '1.0',
 				},
@@ -466,7 +466,7 @@ test(
 				['task', 'statusUpdate', 'artifactUpdate', 'statusUpdate']
 			);
 			assert.equal(events[1]?.statusUpdate.status.state, 'TASK_STATE_WORKING');
-			assert.equal(events[2]?.artifactUpdate.artifact.parts[0].text, 'Hello from Idra');
+			assert.equal(events[2]?.artifactUpdate.artifact.parts[0].text, 'Hello from kucedr-cloud');
 			assert.equal(events[3]?.statusUpdate.status.state, 'TASK_STATE_COMPLETED');
 			assert.equal(streamBody.includes(secret), false);
 			assert.equal(calls.length, 1);
@@ -519,8 +519,8 @@ test('A2A executor validates text input, preserves order, and exposes only respo
 			return true;
 		},
 	};
-	const workspace = path.join(os.tmpdir(), 'idra-a2a-workspace');
-	const executor = new IdraExecutor(agent, workspace);
+	const workspace = path.join(os.tmpdir(), 'kucedr-cloud-a2a-workspace');
+	const executor = new KucedrCloudExecutor(agent, workspace);
 	const taskId = randomUUID();
 	const contextId = randomUUID();
 	const events = await execute(
@@ -607,7 +607,7 @@ test('A2A executor emits exactly one sanitized terminal state for every run outc
 			},
 		};
 		const events = await execute(
-			new IdraExecutor(agent, '/workspace'),
+			new KucedrCloudExecutor(agent, '/workspace'),
 			requestContext([textPart('run')])
 		);
 		const terminal = terminalStates(events);
@@ -616,7 +616,7 @@ test('A2A executor emits exactly one sanitized terminal state for every run outc
 
 	const runtimeSecret = 'provider-secret-runtime-error';
 	const events = await execute(
-		new IdraExecutor(
+		new KucedrCloudExecutor(
 			{
 				async send() {
 					throw new Error(runtimeSecret);
@@ -631,11 +631,11 @@ test('A2A executor emits exactly one sanitized terminal state for every run outc
 	);
 	assert.deepEqual(terminalStates(events), [TaskState.TASK_STATE_FAILED]);
 	assert.equal(JSON.stringify(events).includes(runtimeSecret), false);
-	assert.match(JSON.stringify(events), /Idra run failed/);
+	assert.match(JSON.stringify(events), /kucedr-cloud run failed/);
 });
 
 test('A2A request handler supports immediate and blocking sends, polling, listing, subscription, and cancellation', async () => {
-	const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'idra-a2a-handler-'));
+	const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'kucedr-cloud-a2a-handler-'));
 	const gates = new Map<string, ReturnType<typeof deferred>>();
 	const starts = new Map<string, ReturnType<typeof deferred>>();
 	const runs = new Map<string, string>();
@@ -665,9 +665,9 @@ test('A2A request handler supports immediate and blocking sends, polling, listin
 
 	try {
 		const handler = new DefaultRequestHandler(
-			createAgentCard('https://idra.example'),
+			createAgentCard('https://kucedr-cloud.example'),
 			await createTaskStore(path.join(directory, 'tasks')),
-			new IdraExecutor(agent, path.join(directory, 'workspace'))
+			new KucedrCloudExecutor(agent, path.join(directory, 'workspace'))
 		);
 		const context = new ServerCallContext({
 			requestedVersion: '1.0',
@@ -822,7 +822,7 @@ function requestContext(
 }
 
 async function execute(
-	executor: IdraExecutor,
+	executor: KucedrCloudExecutor,
 	context: RequestContext
 ): Promise<AgentExecutionEvent[]> {
 	const events: AgentExecutionEvent[] = [];

@@ -8,9 +8,9 @@ import { buildWorkspaceContext } from '../src/main/agent/system/build_workspace_
 import { AGENT_TEMPLATE } from '../src/main/agent/system/template';
 
 test('Agent creation seeds only the hardcoded AGENTS.md without overwriting it', () => {
-	const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'idra-agent-context-'));
-	const previousDataDirectory = process.env.IDRA_DATA_DIR;
-	process.env.IDRA_DATA_DIR = directory;
+	const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'kucedr-cloud-agent-context-'));
+	const previousDataDirectory = process.env.KUCEDR_CLOUD_DATA_DIR;
+	process.env.KUCEDR_CLOUD_DATA_DIR = directory;
 	try {
 		new Agent();
 		const workspace = path.join(directory, 'workspace');
@@ -22,14 +22,14 @@ test('Agent creation seeds only the hardcoded AGENTS.md without overwriting it',
 		new Agent();
 		assert.equal(fs.readFileSync(path.join(workspace, 'AGENTS.md'), 'utf8'), 'custom guidance');
 	} finally {
-		if (previousDataDirectory === undefined) delete process.env.IDRA_DATA_DIR;
-		else process.env.IDRA_DATA_DIR = previousDataDirectory;
+		if (previousDataDirectory === undefined) delete process.env.KUCEDR_CLOUD_DATA_DIR;
+		else process.env.KUCEDR_CLOUD_DATA_DIR = previousDataDirectory;
 		fs.rmSync(directory, { recursive: true, force: true });
 	}
 });
 
 test('workspace context reads only AGENTS.md', async () => {
-	const workspace = fs.mkdtempSync(path.join(os.tmpdir(), 'idra-workspace-context-'));
+	const workspace = fs.mkdtempSync(path.join(os.tmpdir(), 'kucedr-cloud-workspace-context-'));
 	try {
 		fs.writeFileSync(path.join(workspace, 'AGENTS.md'), 'current guidance');
 		fs.writeFileSync(path.join(workspace, 'SOUL.md'), 'legacy content');

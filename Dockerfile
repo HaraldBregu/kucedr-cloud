@@ -1,7 +1,7 @@
 FROM node:26.7.0-bookworm-slim
 
 ENV NODE_ENV=production \
-	IDRA_DATA_DIR=/data \
+	KUCEDR_CLOUD_DATA_DIR=/data \
 	NODE_OPTIONS=--enable-source-maps
 WORKDIR /app
 

@@ -31,7 +31,7 @@ let currentUsername = '';
 async function request(path, options = {}) {
 	const headers = { accept: 'application/json', ...options.headers };
 	if (options.body) headers['content-type'] = 'application/json';
-	if (csrf && options.method && options.method !== 'GET') headers['x-idra-csrf'] = csrf;
+	if (csrf && options.method && options.method !== 'GET') headers['x-kucedr-cloud-csrf'] = csrf;
 	const response = await fetch(path, { credentials: 'same-origin', ...options, headers });
 	const body = response.status === 204 ? null : await response.json().catch(() => null);
 	if (!response.ok)

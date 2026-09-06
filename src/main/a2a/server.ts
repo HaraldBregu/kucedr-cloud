@@ -34,7 +34,7 @@ export async function createA2aServer(
 			redact: [
 				'req.headers.authorization',
 				'req.headers.cookie',
-				'req.headers.x-idra-csrf',
+				'req.headers.x-kucedr-cloud-csrf',
 				'req.body.apiKey',
 				'req.body.client_assertion',
 				'req.body.password',
