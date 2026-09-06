@@ -28,7 +28,9 @@ export function resolveSecureA2aConfig(input: SecureA2aConfigInput): SecureA2aCo
 			? process.env.KUCEDR_CLOUD_CONFIG_KEY?.trim()
 			: input.configurationKey?.trim();
 	const publicUrl =
-		input.publicUrl === undefined ? process.env.KUCEDR_CLOUD_PUBLIC_URL?.trim() : input.publicUrl?.trim();
+		input.publicUrl === undefined
+			? process.env.KUCEDR_CLOUD_PUBLIC_URL?.trim()
+			: input.publicUrl?.trim();
 	if (!adminToken || Buffer.byteLength(adminToken, 'utf8') < 32) {
 		throw new Error('KUCEDR_CLOUD_ADMIN_TOKEN must contain at least 32 UTF-8 bytes.');
 	}

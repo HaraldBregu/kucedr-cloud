@@ -1,6 +1,6 @@
-# Using Idra over A2A
+# Using kucedr-cloud over A2A
 
-This guide shows how to configure Idra, register a calling agent, obtain a short-lived OAuth token, send prompts through A2A, continue a conversation, and manage tasks. Idra provides a focused browser interface at `/config` and an administrator-only configuration API; every agent operation uses A2A 1.0 HTTP+JSON.
+This guide shows how to configure kucedr-cloud, register a calling agent, obtain a short-lived OAuth token, send prompts through A2A, continue a conversation, and manage tasks. kucedr-cloud provides a focused browser interface at `/config` and an administrator-only configuration API; every agent operation uses A2A 1.0 HTTP+JSON.
 
 ## Prerequisites
 
@@ -13,13 +13,13 @@ You need:
 
 For the complete reverse-proxy and security setup, see the [deployment guide](../README.md#deploy-with-docker-compose).
 
-## Configure and start Idra
+## Configure and start kucedr-cloud
 
 Clone the repository and create the local environment file:
 
 ```bash
-git clone https://github.com/HaraldBregu/idra.git
-cd idra
+git clone https://github.com/HaraldBregu/kucedr-cloud.git
+cd kucedr-cloud
 cp .env.example .env
 chmod 600 .env
 ```
@@ -41,7 +41,7 @@ KUCEDR_CLOUD_CONFIG_KEY=<second-generated-value>
 
 `KUCEDR_CLOUD_PUBLIC_URL` is the public origin only. Do not add `/a2a` to it. Production URLs must use HTTPS. Loopback HTTP such as `http://127.0.0.1:3000` is for isolated testing only; never send real administrator credentials, client assertions, or access tokens over HTTP. Keep both generated values out of calling-agent environments.
 
-Back up the exact `KUCEDR_CLOUD_CONFIG_KEY` in a protected secret manager before starting Idra. It encrypts the persisted provider and token-signing secrets. Losing or replacing it makes the existing secure configuration unreadable and prevents startup. Online rotation of this key is not currently supported.
+Back up the exact `KUCEDR_CLOUD_CONFIG_KEY` in a protected secret manager before starting kucedr-cloud. It encrypts the persisted provider and token-signing secrets. Losing or replacing it makes the existing secure configuration unreadable and prevents startup. Online rotation of this key is not currently supported.
 
 Validate and start the container:
 
@@ -55,7 +55,7 @@ The HTTP endpoint is ready when Compose reports it as healthy. The health check 
 
 ## Understand the API boundaries
 
-Idra exposes four distinct REST surfaces:
+kucedr-cloud exposes four distinct REST surfaces:
 
 | Surface                   | Authentication                       | Purpose                                                                            |
 | ------------------------- | ------------------------------------ | ---------------------------------------------------------------------------------- |
@@ -91,7 +91,7 @@ curl --fail-with-body -X PUT "$KUCEDR_CLOUD_URL/config/provider" \
   }'
 ```
 
-The response contains only provider metadata and `hasApiKey`; it never returns the key. Idra encrypts the provider configuration with `KUCEDR_CLOUD_CONFIG_KEY` before writing it to the data volume.
+The response contains only provider metadata and `hasApiKey`; it never returns the key. kucedr-cloud encrypts the provider configuration with `KUCEDR_CLOUD_CONFIG_KEY` before writing it to the data volume.
 
 Inspect the current provider state, registered clients, and OAuth coordinates from the trusted operator shell:
 
@@ -100,7 +100,7 @@ curl --fail-with-body "$KUCEDR_CLOUD_URL/config" \
   -H "Authorization: Bearer $KUCEDR_CLOUD_ADMIN_TOKEN"
 ```
 
-To change only the model for the currently configured provider, omit `apiKey`; Idra keeps the encrypted key already stored for that provider:
+To change only the model for the currently configured provider, omit `apiKey`; kucedr-cloud keeps the encrypted key already stored for that provider:
 
 ```bash
 curl --fail-with-body -X PUT "$KUCEDR_CLOUD_URL/config/provider" \
@@ -144,11 +144,11 @@ An unauthenticated request to the exact A2A resource returns the protected-resou
 curl -i "$KUCEDR_CLOUD_URL/a2a"
 ```
 
-Calling agents should follow the Agent Card's `oauth2MetadataUrl` and use the returned `token_endpoint` instead of assuming Idra's endpoint path.
+Calling agents should follow the Agent Card's `oauth2MetadataUrl` and use the returned `token_endpoint` instead of assuming kucedr-cloud's endpoint path.
 
 ## Register a calling agent
 
-Generate an Ed25519 key pair in a trusted client environment. The private JWK remains on that client; only the public JWK is registered with Idra:
+Generate an Ed25519 key pair in a trusted client environment. The private JWK remains on that client; only the public JWK is registered with kucedr-cloud:
 
 ```js
 // save as generate-key.mjs and run: node generate-key.mjs
@@ -193,7 +193,7 @@ Run the registration from the operator environment. The response contains the ne
 node register-client.mjs
 ```
 
-Return the `clientId` and public Idra URL to the calling-agent environment through a trusted channel:
+Return the `clientId` and public kucedr-cloud URL to the calling-agent environment through a trusted channel:
 
 ```bash
 export KUCEDR_CLOUD_URL='https://agent.example.com'
@@ -240,7 +240,7 @@ if (
 	throw new Error('OAuth metadata does not match KUCEDR_CLOUD_URL.');
 }
 if (!metadata.token_endpoint_auth_methods_supported?.includes('private_key_jwt')) {
-	throw new Error('Idra does not advertise private_key_jwt.');
+	throw new Error('kucedr-cloud does not advertise private_key_jwt.');
 }
 
 const resourceResponse = await fetch(`${baseUrl}/.well-known/oauth-protected-resource/a2a`);
@@ -300,13 +300,13 @@ Acquire a token immediately before calling A2A:
 export KUCEDR_CLOUD_TOKEN="$(node get-token.mjs)"
 ```
 
-The token expires after five minutes and there is no refresh token. Generate a fresh assertion with a unique `jti` for every token request. Idra persists a SHA-256 digest of the client ID and assertion `jti`, then rejects reuse across normal restarts.
+The token expires after five minutes and there is no refresh token. Generate a fresh assertion with a unique `jti` for every token request. kucedr-cloud persists a SHA-256 digest of the client ID and assertion `jti`, then rejects reuse across normal restarts.
 
-`private_key_jwt` protects token acquisition, but the resulting access token is an ordinary bearer credential. Keep it in memory, never log or persist it, discard it at expiry, and send it only over HTTPS. Run a single Idra replica. Multi-replica operation requires coordinated signing keys and shared transactional client, assertion-replay, task, and conversation state.
+`private_key_jwt` protects token acquisition, but the resulting access token is an ordinary bearer credential. Keep it in memory, never log or persist it, discard it at expiry, and send it only over HTTPS. Run a single kucedr-cloud replica. Multi-replica operation requires coordinated signing keys and shared transactional client, assertion-replay, task, and conversation state.
 
 ## Send your first prompt
 
-Use `message:stream` to receive Server-Sent Events while Idra works:
+Use `message:stream` to receive Server-Sent Events while kucedr-cloud works:
 
 ```bash
 curl -N "$KUCEDR_CLOUD_URL/a2a/message:stream" \
@@ -332,7 +332,7 @@ Use a unique `messageId` for every message. A streamed run normally produces eve
 
 1. `task` — contains the new task `id` and conversation `contextId`;
 2. `statusUpdate` — reports `TASK_STATE_WORKING`;
-3. one or more `artifactUpdate` events — contain Idra's text response; and
+3. one or more `artifactUpdate` events — contain kucedr-cloud's text response; and
 4. a terminal `statusUpdate` — reports `TASK_STATE_COMPLETED`, `TASK_STATE_FAILED`, or `TASK_STATE_CANCELED`.
 
 Internal reasoning and tool details are not returned through A2A.
@@ -362,7 +362,7 @@ curl -N "$KUCEDR_CLOUD_URL/a2a/message:stream" \
   }'
 ```
 
-Idra creates a new task for each message but reuses the conversation associated with the supplied `contextId`. Omit `contextId` to start a new conversation. Conversations are scoped to the authenticated client; learning another client's `contextId` does not grant access to it.
+kucedr-cloud creates a new task for each message but reuses the conversation associated with the supplied `contextId`. Omit `contextId` to start a new conversation. Conversations are scoped to the authenticated client; learning another client's `contextId` does not grant access to it.
 
 ## Send without streaming
 
@@ -454,7 +454,7 @@ Install the official A2A SDK in your client project:
 npm install @a2a-js/sdk jose
 ```
 
-Create a client that discovers Idra from its Agent Card and streams a prompt:
+Create a client that discovers kucedr-cloud from its Agent Card and streams a prompt:
 
 ```js
 import { randomUUID } from 'node:crypto';
@@ -510,19 +510,19 @@ Pass the `contextId` from the first task in a later request to continue that con
 
 ## Understand the workspace and limits
 
-Idra's persistent workspace is `/data/workspace` inside the container. The A2A agent can use only three workspace-bound tools:
+kucedr-cloud's persistent workspace is `/data/workspace` inside the container. The A2A agent can use only three workspace-bound tools:
 
 - `read` reads a workspace file;
 - `write` creates or replaces a workspace file; and
 - `edit` changes an existing workspace file.
 
-Shell commands, MCP servers, subagents, administrative APIs, and configuration changes are unavailable through A2A. Put durable behavioral instructions in the workspace's `AGENTS.md` file by asking Idra to create or update it.
+Shell commands, MCP servers, subagents, administrative APIs, and configuration changes are unavailable through A2A. Put durable behavioral instructions in the workspace's `AGENTS.md` file by asking kucedr-cloud to create or update it.
 
 Message text is limited to 32 KiB, general HTTP request bodies are limited to 100 KiB, and only `text/plain` message parts are accepted. The token form has a smaller 8 KiB and 12-parameter limit. Task-list `pageSize` and `historyLength` cannot exceed 100. Terminal task records are retained for 30 days, and task/conversation data persists in the `idra-data` Docker volume.
 
-The in-memory rate limits are 30 configuration requests per minute per source IP, 10 token requests per minute per source IP and client, 60 authenticated A2A requests per minute per client, and 600 pre-authentication A2A requests per minute per network source. A limited response returns `429 Too Many Requests` and `Retry-After: 60`. Limits reset when Idra restarts.
+The in-memory rate limits are 30 configuration requests per minute per source IP, 10 token requests per minute per source IP and client, 60 authenticated A2A requests per minute per client, and 600 pre-authentication A2A requests per minute per network source. A limited response returns `429 Too Many Requests` and `Retry-After: 60`. Limits reset when kucedr-cloud restarts.
 
-## Stop, restart, or update Idra
+## Stop, restart, or update kucedr-cloud
 
 Restart without deleting data:
 
@@ -586,7 +586,7 @@ Add `A2A-Version: 1.0`. Missing, `0.3`, and unsupported future versions are reje
 
 ### Opening the server URL redirects to registration or login
 
-This is expected. Idra redirects `/` to administrator registration on a new installation and to administrator login after an account exists. A2A clients should use `/.well-known/agent-card.json` for discovery and `/a2a` for agent operations.
+This is expected. kucedr-cloud redirects `/` to administrator registration on a new installation and to administrator login after an account exists. A2A clients should use `/.well-known/agent-card.json` for discovery and `/a2a` for agent operations.
 
 ### Streaming arrives all at once
 

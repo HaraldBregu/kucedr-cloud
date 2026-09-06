@@ -1,7 +1,9 @@
 import { CONFIGURATION_SESSION_SECONDS } from './session';
 
 export function configurationCookieName(publicUrl: string): string {
-	return new URL(publicUrl).protocol === 'https:' ? '__Host-kucedr-cloud_config' : 'kucedr-cloud_config_session';
+	return new URL(publicUrl).protocol === 'https:'
+		? '__Host-kucedr-cloud_config'
+		: 'kucedr-cloud_config_session';
 }
 
 export function readConfigurationCookie(

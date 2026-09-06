@@ -1,17 +1,17 @@
 # A2A client integration
 
-This guide describes how an external client authenticates with Idra and invokes the agent over A2A 1.0 HTTP+JSON.
+This guide describes how an external client authenticates with kucedr-cloud and invokes the agent over A2A 1.0 HTTP+JSON.
 
 ## Credential boundaries
 
 An A2A client needs only:
 
-- Idra's public URL;
+- kucedr-cloud's public URL;
 - its registered client ID;
 - its own Ed25519 private key; and
 - a short-lived OAuth access token obtained with that key.
 
-The client must never receive or send the model provider API key, `KUCEDR_CLOUD_ADMIN_TOKEN`, or `KUCEDR_CLOUD_CONFIG_KEY`. Idra uses the provider API key internally when invoking the configured model. The administrator token is used only by a trusted operator to register or revoke clients.
+The client must never receive or send the model provider API key, `KUCEDR_CLOUD_ADMIN_TOKEN`, or `KUCEDR_CLOUD_CONFIG_KEY`. kucedr-cloud uses the provider API key internally when invoking the configured model. The administrator token is used only by a trusted operator to register or revoke clients.
 
 ## Interaction flow
 
@@ -27,7 +27,7 @@ The client must never receive or send the model provider API key, `KUCEDR_CLOUD_
 Create a Node.js client project and install JOSE:
 
 ```bash
-mkdir idra-client && cd idra-client
+mkdir kucedr-cloud-client && cd kucedr-cloud-client
 npm init -y
 npm install jose
 ```
@@ -53,7 +53,7 @@ writeFileSync('client-public.jwk', JSON.stringify(publicKey.export({ format: 'jw
 node generate-key.mjs
 ```
 
-Give `client-public.jwk` to the Idra administrator. Never send `client-private.jwk`. After the administrator registers the public key, set the returned client ID and Idra URL:
+Give `client-public.jwk` to the kucedr-cloud administrator. Never send `client-private.jwk`. After the administrator registers the public key, set the returned client ID and kucedr-cloud URL:
 
 ```bash
 export KUCEDR_CLOUD_URL='https://agent.example.com'
@@ -135,7 +135,7 @@ if (!messageResponse.ok) throw new Error(await messageResponse.text());
 console.log(JSON.stringify(await messageResponse.json(), null, 2));
 ```
 
-Invoke Idra:
+Invoke kucedr-cloud:
 
 ```bash
 node invoke.mjs 'Summarize the workspace.'
@@ -143,7 +143,7 @@ node invoke.mjs 'Summarize the workspace.'
 
 The script discovers OAuth configuration, creates a new one-time assertion, obtains a five-minute access token, and sends an authenticated A2A message. In a long-running client, cache the access token only in memory until shortly before expiry, then repeat the token exchange with a new assertion.
 
-## 1. Discover Idra
+## 1. Discover kucedr-cloud
 
 Start with the Agent Card rather than hard-coding A2A or OAuth endpoints:
 
@@ -171,7 +171,7 @@ Validate that discovered URLs use the expected HTTPS origin before sending crede
 
 ## 2. Register the client
 
-Generate an Ed25519 key pair in the client environment. Keep the private key there and provide only the public JWK to a trusted Idra administrator.
+Generate an Ed25519 key pair in the client environment. Keep the private key there and provide only the public JWK to a trusted kucedr-cloud administrator.
 
 The administrator registers it with:
 
@@ -303,7 +303,7 @@ POST /a2a/tasks/{taskId}:subscribe
 POST /a2a/tasks/{taskId}:cancel
 ```
 
-Subscription responses use Server-Sent Events. A task ID does not grant access by itself; Idra checks that the authenticated client owns the task.
+Subscription responses use Server-Sent Events. A task ID does not grant access by itself; kucedr-cloud checks that the authenticated client owns the task.
 
 ## Errors and token renewal
 
@@ -311,8 +311,8 @@ Subscription responses use Server-Sent Events. A task ID does not grant access b
 - `invalid_client`: verify the client ID, signing key, assertion audience, clock, and unique `jti`.
 - `429 Too Many Requests`: wait for the duration in `Retry-After`.
 - Version error: include `A2A-Version: 1.0`.
-- Failed task: ask the administrator to verify Idra's provider configuration; the client should not attempt to supply a provider API key.
+- Failed task: ask the administrator to verify kucedr-cloud's provider configuration; the client should not attempt to supply a provider API key.
 
 There is no refresh token. Request a new access token with a newly signed assertion before or after the current five-minute token expires.
 
-For deployment, administration, runnable key-generation examples, and the official JavaScript SDK example, see [Using Idra over A2A](USAGE.md).
+For deployment, administration, runnable key-generation examples, and the official JavaScript SDK example, see [Using kucedr-cloud over A2A](USAGE.md).

@@ -9,7 +9,11 @@ import { registerStorageRoutes } from '../src/main/storage/routes';
 
 test('storage API manages persistent settings and files inside the data directory', async () => {
 	const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'kucedr-cloud-storage-'));
-	const outsideFile = path.join(directory, '..', `kucedr-cloud-outside-${path.basename(directory)}.txt`);
+	const outsideFile = path.join(
+		directory,
+		'..',
+		`kucedr-cloud-outside-${path.basename(directory)}.txt`
+	);
 	const server = Fastify();
 	const headers = { authorization: 'Bearer storage-test-token' };
 	const authenticate = createAdminAuthentication(directory, 'storage-test-token');

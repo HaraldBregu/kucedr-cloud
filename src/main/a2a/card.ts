@@ -37,7 +37,9 @@ export function createAgentCard(
 										value: {
 											tokenUrl: oauth.tokenEndpoint,
 											refreshUrl: '',
-											scopes: { [oauth.scope]: 'Invoke kucedr-cloud and access caller-owned tasks.' },
+											scopes: {
+												[oauth.scope]: 'Invoke kucedr-cloud and access caller-owned tasks.',
+											},
 										},
 									},
 								},
