@@ -68,10 +68,13 @@ export function registerConfigurationUiRoutes(
 	server.get('/config/assets/shell.css', async (_request, reply) =>
 		reply.header('cache-control', 'no-store').type('text/css').send(shellStyles)
 	);
-	for (const name of ['icon.svg', 'favicon.svg']) {
+	for (const [name, type] of [
+		['icon.svg', 'image/svg+xml'],
+		['favicon.png', 'image/png'],
+	]) {
 		const asset = fs.readFileSync(new URL(`../../ui/assets/${name}`, import.meta.url));
 		server.get(`/config/assets/${name}`, async (_request, reply) =>
-			reply.header('cache-control', 'no-store').type('image/svg+xml').send(asset)
+			reply.header('cache-control', 'no-store').type(type).send(asset)
 		);
 	}
 	server.get('/config', async (request, reply) => {
