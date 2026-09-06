@@ -87,6 +87,7 @@ td:first-child {
 .application-layout.authenticated {
 	display: grid;
 	grid-template-columns: 200px minmax(0, 1fr);
+	border-inline-end: 1px solid var(--border);
 	min-height: 0;
 	overflow-y: auto;
 }
@@ -150,6 +151,7 @@ td:first-child {
 
 	.application-layout.authenticated {
 		grid-template-columns: minmax(0, 1fr);
+		border-inline-end: 0;
 	}
 
 	.application-layout .config-shell {
