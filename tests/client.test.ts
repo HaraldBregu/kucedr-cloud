@@ -8,11 +8,11 @@ import test from 'node:test';
 import { Role, TaskState, type SendMessageRequest, type StreamResponse } from '@a2a-js/sdk';
 import { ClientFactory, RestTransportFactory } from '@a2a-js/sdk/client';
 import { importJWK, SignJWT, type JWK } from 'jose';
-import { createA2aServer } from '../src/main/a2a/server';
 import type { AgentSendOptions } from '../src/main/agent/agent';
 import { ConfigurationStore } from '../src/main/config/store';
 import { OAuthError } from '../src/main/oauth/error';
 import { OAuthIssuer } from '../src/main/oauth/issuer';
+import { createServers } from '../src/main/runtime';
 
 test('the official A2A REST client discovers kucedr-cloud and streams continuous contexts', async (context) => {
 	const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'kucedr-cloud-a2a-client-'));
@@ -39,17 +39,22 @@ test('the official A2A REST client discovers kucedr-cloud and streams continuous
 		},
 	};
 
-	let port: number;
+	let ports: number[];
+	const probes = [net.createServer(), net.createServer()];
 	try {
-		port = await new Promise<number>((resolve, reject) => {
-			const probe = net.createServer();
-			probe.once('error', reject);
-			probe.listen({ host: '127.0.0.1', port: 0 }, () => {
-				const address = probe.address();
-				assert.ok(address && typeof address === 'object');
-				probe.close((error) => (error ? reject(error) : resolve(address.port)));
-			});
-		});
+		ports = await Promise.all(
+			probes.map(
+				(probe) =>
+					new Promise<number>((resolve, reject) => {
+						probe.once('error', reject);
+						probe.listen({ host: '127.0.0.1', port: 0 }, () => {
+							const address = probe.address();
+							assert.ok(address && typeof address === 'object');
+							resolve(address.port);
+						});
+					})
+			)
+		);
 	} catch (error) {
 		fs.rmSync(directory, { recursive: true, force: true });
 		if ((error as NodeJS.ErrnoException).code === 'EPERM') {
@@ -57,20 +62,28 @@ test('the official A2A REST client discovers kucedr-cloud and streams continuous
 			return;
 		}
 		throw error;
+	} finally {
+		await Promise.all(probes.map((probe) => new Promise<void>((resolve) => probe.close(() => resolve()))));
 	}
 
+	const [port, appPort] = ports;
+	assert.notEqual(port, appPort);
 	const baseUrl = `http://127.0.0.1:${port}`;
-	const server = await createA2aServer(agent, {
+	const appUrl = `http://127.0.0.1:${appPort}`;
+	const servers = await createServers(agent, {
 		adminToken,
 		configurationKey,
 		dataDirectory: directory,
 		publicUrl: baseUrl,
+		appUrl,
 	});
-	server.log.level = 'silent';
+	servers.application.log.level = 'silent';
+	servers.a2a.log.level = 'silent';
 
 	try {
 		try {
-			await server.listen({ host: '127.0.0.1', port });
+			await servers.application.listen({ host: '127.0.0.1', port: appPort });
+			await servers.a2a.listen({ host: '127.0.0.1', port });
 		} catch (error) {
 			if ((error as NodeJS.ErrnoException).code === 'EPERM') {
 				context.skip('The execution sandbox does not allow local listening sockets.');
@@ -79,9 +92,9 @@ test('the official A2A REST client discovers kucedr-cloud and streams continuous
 			throw error;
 		}
 		const providerSecret = 'provider-secret-must-never-be-returned';
-		const administrator = await fetch(`${baseUrl}/config/auth/register`, {
+		const administrator = await fetch(`${appUrl}/config/auth/register`, {
 			method: 'POST',
-			headers: { origin: baseUrl, 'content-type': 'application/json' },
+			headers: { origin: appUrl, 'content-type': 'application/json' },
 			body: JSON.stringify({
 				setupToken: adminToken,
 				username: 'administrator',
@@ -94,7 +107,7 @@ test('the official A2A REST client discovers kucedr-cloud and streams continuous
 		assert.ok(cookie);
 		const adminHeaders = {
 			cookie,
-			origin: baseUrl,
+			origin: appUrl,
 			'content-type': 'application/json',
 			'x-kucedr-cloud-csrf': session.csrfToken,
 		};
@@ -107,7 +120,7 @@ test('the official A2A REST client discovers kucedr-cloud and streams continuous
 			).status,
 			401
 		);
-		const configuredProvider = await fetch(`${baseUrl}/config/provider`, {
+		const configuredProvider = await fetch(`${appUrl}/config/provider`, {
 			method: 'PUT',
 			headers: adminHeaders,
 			body: JSON.stringify({ provider: 'openai', model: 'test-model', apiKey: providerSecret }),
@@ -153,7 +166,7 @@ test('the official A2A REST client discovers kucedr-cloud and streams continuous
 		const pair = generateKeyPairSync('ed25519');
 		const publicKey = pair.publicKey.export({ format: 'jwk' }) as JWK;
 		const privateKey = pair.privateKey.export({ format: 'jwk' }) as JWK;
-		const registered = await fetch(`${baseUrl}/config/clients`, {
+		const registered = await fetch(`${appUrl}/config/clients`, {
 			method: 'POST',
 			headers: adminHeaders,
 			body: JSON.stringify({ name: 'official-sdk-test', publicKeyJwk: publicKey }),
@@ -215,12 +228,71 @@ test('the official A2A REST client discovers kucedr-cloud and streams continuous
 		);
 		assert.equal(
 			(
-				await fetch(`${baseUrl}/config`, {
-					headers: { authorization: `Bearer ${token.access_token}` },
+				await fetch(`${appUrl}/config/api`, {
+					headers: { origin: appUrl, authorization: `Bearer ${token.access_token}` },
 				})
 			).status,
 			401
 		);
+		const privateRoutes = [
+			{ method: 'GET', path: '/' },
+			{ method: 'GET', path: '/config' },
+			{ method: 'GET', path: '/config/api' },
+			{ method: 'GET', path: '/config/register' },
+			{ method: 'GET', path: '/config/login' },
+			{ method: 'GET', path: '/config/setup' },
+			{ method: 'GET', path: '/config/assets/config.js' },
+			{ method: 'GET', path: '/config/auth/status' },
+			{ method: 'POST', path: '/config/auth/register' },
+			{ method: 'POST', path: '/config/auth/session' },
+			{ method: 'DELETE', path: '/config/auth/session' },
+			{ method: 'PUT', path: '/config/provider' },
+			{ method: 'DELETE', path: '/config/provider' },
+			{ method: 'POST', path: '/config/clients' },
+			{ method: 'DELETE', path: `/config/clients/${registration.clientId}` },
+		];
+		const externalHeaders: Record<string, string>[] = [
+			{},
+			{ cookie, origin: appUrl, 'x-kucedr-cloud-csrf': session.csrfToken },
+			{ authorization: `Bearer ${adminToken}` },
+			{ authorization: `Bearer ${token.access_token}` },
+			{
+				cookie,
+				origin: appUrl,
+				referer: `${appUrl}/config`,
+				'host': new URL(appUrl).host,
+				'x-forwarded-host': new URL(appUrl).host,
+				'x-forwarded-proto': 'http',
+				'sec-fetch-site': 'same-origin',
+				'sec-fetch-mode': 'cors',
+				'sec-fetch-dest': 'empty',
+				'x-kucedr-cloud-csrf': session.csrfToken,
+			},
+		];
+		for (const route of privateRoutes) {
+			for (const headers of externalHeaders) {
+				const response = await fetch(`${baseUrl}${route.path}`, {
+					method: route.method,
+					headers,
+					redirect: 'manual',
+				});
+				assert.equal(response.status, 404, `${route.method} ${route.path} must be private`);
+			}
+		}
+		for (const route of [
+			{ method: 'GET', path: '/.well-known/agent-card.json' },
+			{ method: 'GET', path: '/.well-known/oauth-authorization-server' },
+			{ method: 'GET', path: '/.well-known/oauth-protected-resource/a2a' },
+			{ method: 'POST', path: '/a2a/oauth/token' },
+			{ method: 'GET', path: '/a2a' },
+			{ method: 'GET', path: '/a2a/tasks' },
+		]) {
+			const response = await fetch(`${appUrl}${route.path}`, {
+				method: route.method,
+				headers: { authorization: `Bearer ${token.access_token}`, cookie, origin: appUrl },
+			});
+			assert.equal(response.status, 404, `${route.method} ${route.path} must be on the A2A listener`);
+		}
 
 		const client = await new ClientFactory({
 			transports: [new RestTransportFactory()],
@@ -319,9 +391,9 @@ test('the official A2A REST client discovers kucedr-cloud and streams continuous
 		assert.equal(requests[1]?.options.sessionId, requests[0]?.options.sessionId);
 		assert.notEqual(requests[0]?.options.sessionId, firstTask.contextId);
 
-		const revoked = await fetch(`${baseUrl}/config/clients/${registration.clientId}`, {
+		const revoked = await fetch(`${appUrl}/config/clients/${registration.clientId}`, {
 			method: 'DELETE',
-			headers: { cookie, origin: baseUrl, 'x-kucedr-cloud-csrf': session.csrfToken },
+			headers: { cookie, origin: appUrl, 'x-kucedr-cloud-csrf': session.csrfToken },
 		});
 		assert.equal(revoked.status, 200);
 		assert.deepEqual(await revoked.json(), { deleted: true });
@@ -337,7 +409,7 @@ test('the official A2A REST client discovers kucedr-cloud and streams continuous
 			401
 		);
 	} finally {
-		await server.close();
+		await Promise.all([servers.application.close(), servers.a2a.close()]);
 		fs.rmSync(directory, { recursive: true, force: true });
 	}
 });
