@@ -40,7 +40,7 @@ KUCEDR_CLOUD_ADMIN_TOKEN=<first-generated-value>
 KUCEDR_CLOUD_CONFIG_KEY=<second-generated-value>
 ```
 
-`KUCEDR_CLOUD_PUBLIC_URL` is the public A2A origin only. Do not add `/a2a` to it. Production public URLs must use HTTPS; client assertions and A2A access tokens must not cross an unencrypted network. `KUCEDR_CLOUD_APP_URL` is the separate browser application origin, defaulting to `http://127.0.0.1:3001`. Loopback HTTP is suitable for local administration or access through an encrypted SSH tunnel. Keep both generated secrets out of calling-agent environments.
+`KUCEDR_CLOUD_PUBLIC_URL` is the public A2A origin only. Do not add `/a2a` to it. Production public URLs must use HTTPS; client assertions and A2A access tokens must not cross an unencrypted network. `KUCEDR_CLOUD_APP_URL` is the separate browser application origin, defaulting to `http://127.0.0.1:3001`; it must differ from `KUCEDR_CLOUD_PUBLIC_URL`. Loopback HTTP is suitable for local administration or access through an encrypted SSH tunnel. Keep both generated secrets out of calling-agent environments.
 
 Back up the exact `KUCEDR_CLOUD_CONFIG_KEY` in a protected secret manager before starting kucedr-cloud. It encrypts the persisted provider and token-signing secrets. Losing or replacing it makes the existing secure configuration unreadable and prevents startup. Online rotation of this key is not currently supported.
 
@@ -67,7 +67,7 @@ kucedr-cloud uses separate listeners for browser administration and machine acce
 
 The public listener uses port 3000 by default and does not register browser pages, authentication, or configuration routes. `/`, `/config`, and `/config/auth/*` return `404` there, regardless of submitted headers or credentials. Public reverse proxies must forward only to this listener.
 
-The private application listener uses port 3001 by default. Native startup binds it to `127.0.0.1`; Docker Compose publishes it only on the host's `127.0.0.1`. Keep that port off public proxies and public interfaces. `KUCEDR_CLOUD_APP_PORT` selects its port, `KUCEDR_CLOUD_APP_URL` selects its browser origin, and `KUCEDR_CLOUD_APP_LISTEN_ADDRESS` selects the native listener address. The container binds internally to `0.0.0.0` so the loopback-only host publication can reach it. A private HTTPS reverse proxy or VPN may use its own explicitly configured application URL.
+The private application listener uses port 3001 by default. Native startup binds it to `127.0.0.1`; Docker Compose publishes it only on the host's `127.0.0.1`. Keep that port off public proxies and public interfaces. `KUCEDR_CLOUD_APP_PORT` selects its port, `KUCEDR_CLOUD_APP_URL` selects its browser origin, and `KUCEDR_CLOUD_APP_LISTEN_ADDRESS` selects the native listener address. The container binds internally to `0.0.0.0` so the loopback-only host publication can reach it. If you change the application port, update `KUCEDR_CLOUD_APP_URL` and any SSH forwarding to match. A private HTTPS reverse proxy or VPN may use its own explicitly configured application URL.
 
 The configuration and authentication APIs support the built-in browser application. They reject every `Authorization` header, including administrator and A2A bearer tokens. Configuration data requires a valid session cookie. API reads require same-origin request metadata; registration, login, logout, and configuration changes require an `Origin` matching `KUCEDR_CLOUD_APP_URL`. Authenticated changes also require the session's CSRF token. The browser supplies these automatically.
 
@@ -87,7 +87,7 @@ Then open the same local browser URL. The SSH connection encrypts traffic betwee
 
 On the first visit, enter the value of `KUCEDR_CLOUD_ADMIN_TOKEN` in **Setup token**, choose a username, and create a password of at least 12 characters. The form submits the setup credential as `setupToken`; it is never embedded in the page. Registration requires this secret and is available only once. The setup token cannot create another administrator or replace an existing account after registration.
 
-The next setup page requires the model provider, model ID, and API key before the configuration dashboard opens. Later visits use the administrator username and password, without the setup token. Existing administrator accounts and sessions remain valid.
+The next setup page requires the model provider, model ID, and API key before the configuration dashboard opens. Later visits use the administrator username and password, without the setup token. Existing administrator accounts and saved configuration are retained; sign in on the private application origin after switching from the previous shared listener.
 
 Browser sessions last 12 hours, use an HTTP-only same-site cookie, and are revoked when you log out. Passwords, setup tokens, and provider API keys are never stored in browser storage. Keep the deployment setup token out of calling-agent environments.
 
@@ -518,7 +518,7 @@ Inspect the container log:
 docker compose logs app
 ```
 
-Common causes are a deployment setup token shorter than 32 bytes, a configuration key that does not encode exactly 32 bytes, replacing the key that encrypted the existing `secure-config.json`, or an invalid `KUCEDR_CLOUD_PUBLIC_URL`. Restore the exact backed-up configuration key when persisted data already exists. Production public URLs must use HTTPS and must not contain a path, query, credentials, or fragment.
+Common causes are a deployment setup token shorter than 32 bytes, a configuration key that does not encode exactly 32 bytes, replacing the key that encrypted the existing `secure-config.json`, an invalid `KUCEDR_CLOUD_PUBLIC_URL` or `KUCEDR_CLOUD_APP_URL`, or configuring both origins to the same value. Restore the exact backed-up configuration key when persisted data already exists. Production public URLs must use HTTPS and must not contain a path, query, credentials, or fragment.
 
 ### An A2A request returns `401 Unauthorized`
 
