@@ -289,6 +289,10 @@ elements['provider-form'].addEventListener('submit', async (event) => {
 		document.getElementById('api-key').value = '';
 		await loadConfiguration();
 		showNotice('Provider configuration saved.');
+		const target = document.getElementById('add-provider').disabled
+			? document.querySelector('#provider-rows button[data-action="edit"]')
+			: document.getElementById('add-provider');
+		target?.focus();
 	} catch (error) {
 		showNotice(error.message, 'error');
 	} finally {

@@ -182,7 +182,7 @@
 								Enter the provider’s model and API key. Saving another provider keeps your active
 								provider selected.
 							</p>
-							<form id="provider-form">
+							<form id="provider-form" autocomplete="off">
 								<div class="field">
 									<label for="provider">Provider</label
 									><select id="provider" name="provider">
@@ -200,8 +200,10 @@
 									><input
 										id="api-key"
 										name="apiKey"
-										type="password"
+										type="text"
 										autocomplete="off"
+										spellcheck="false"
+										autocapitalize="off"
 										maxlength="4096"
 									/>
 									<p class="helper" id="api-key-helper">Required for the selected provider.</p>

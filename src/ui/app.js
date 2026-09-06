@@ -42,7 +42,6 @@ const elements = Object.fromEntries(
 		'save-settings',
 		'settings-json',
 		'settings-state',
-		'show-provider-key',
 		'provider-form',
 		'provider-key',
 		'provider-model',
@@ -233,9 +232,6 @@ elements['save-mcp'].addEventListener('click', async () => {
 	}
 });
 
-elements['show-provider-key'].addEventListener('change', () => {
-	elements['provider-key'].type = elements['show-provider-key'].checked ? 'text' : 'password';
-});
 
 elements['provider-select'].addEventListener('change', () => {
 	const placeholders = {
