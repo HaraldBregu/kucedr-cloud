@@ -159,11 +159,14 @@ esac
 				writeFileSync(path.join(install, 'unrelated.txt'), 'preserve me');
 			}
 			let previousConfig = '';
-			const attempts = ['rerun', 'retry-build', 'restore-config', 'symlink-env'].includes(scenario) ? 2 : 1;
+			const attempts = ['rerun', 'retry-build', 'restore-config', 'symlink-env'].includes(scenario)
+				? 2
+				: 1;
 			for (let attempt = 0; attempt < attempts; attempt++) {
 				if (attempt === 1) {
 					writeFileSync(log, '');
-					environment.FAKE_MODE = scenario === 'restore-config' ? 'existing-volume' : 'download-failure';
+					environment.FAKE_MODE =
+						scenario === 'restore-config' ? 'existing-volume' : 'download-failure';
 					environment.KUCEDR_CLOUD_PUBLIC_URL = 'https://changed.example.com';
 					if (scenario === 'restore-config') rmSync(path.join(install, '.env'));
 					else if (scenario === 'rerun') {
@@ -192,7 +195,11 @@ esac
 				assert.ifError(result.error);
 				assert.equal(existsSync(`${install}.lock`), false, `${scenario} left an installer lock`);
 				for (const entry of readdirSync(directory)) {
-					assert.equal(entry.startsWith('.kucedr-install.'), false, `${scenario} left staging files`);
+					assert.equal(
+						entry.startsWith('.kucedr-install.'),
+						false,
+						`${scenario} left staging files`
+					);
 				}
 				assert.doesNotMatch(output, new RegExp(`${key}|must-not-override-generated-key`), scenario);
 				if (success) {
@@ -232,15 +239,29 @@ esac
 					if (['download-failure', 'partial-archive'].includes(scenario)) {
 						assert.equal(existsSync(install), false, `${scenario} left a partial installation`);
 					}
-					if (['config-failure', 'build-failure', 'retry-build', 'invalid-config', 'health-failure'].includes(scenario)) {
+					if (
+						[
+							'config-failure',
+							'build-failure',
+							'retry-build',
+							'invalid-config',
+							'health-failure',
+						].includes(scenario)
+					) {
 						previousConfig = readFileSync(path.join(install, '.env'), 'utf8');
 						assert.match(previousConfig, new RegExp(`KUCEDR_CLOUD_ENCRYPTION_KEY=['"]?${key}`));
 						assert.equal(statSync(path.join(install, '.env')).mode & 0o777, 0o600);
-						assert.equal(readFileSync(path.join(install, '.kucedr-revision'), 'utf8').trim(), revision);
+						assert.equal(
+							readFileSync(path.join(install, '.kucedr-revision'), 'utf8').trim(),
+							revision
+						);
 					}
 					if (scenario === 'symlink-env') {
 						assert.match(output, /symbolic link/i);
-						assert.equal(readFileSync(path.join(directory, 'original.env'), 'utf8'), previousConfig);
+						assert.equal(
+							readFileSync(path.join(directory, 'original.env'), 'utf8'),
+							previousConfig
+						);
 					}
 				}
 			}
