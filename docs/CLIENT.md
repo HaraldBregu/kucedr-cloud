@@ -1,6 +1,6 @@
 # A2A client integration
 
-This guide describes how an external client authenticates with kucedr-cloud and invokes the agent over A2A 1.0 HTTP+JSON.
+This guide describes how an external client authenticates with the public kucedr-cloud service and invokes the agent over A2A 1.0 HTTP+JSON. Browser administration runs on a separate private listener.
 
 ## Credential boundaries
 
@@ -173,9 +173,9 @@ Validate that discovered URLs use the expected HTTPS origin before sending crede
 
 Generate an Ed25519 key pair in the client environment. Keep the private key there and provide only the public JWK to a trusted kucedr-cloud administrator.
 
-The administrator signs in at `/config`, enters a client name and the public JWK under **Registered clients**, and chooses **Register client**. They then return the **Client ID** shown in the table to the calling agent. The administrator can later choose **Revoke** on the same row to remove the client's access.
+The administrator signs in at `/config` on the private application origin, normally `http://127.0.0.1:3001`, enters a client name and the public JWK under **Registered clients**, and chooses **Register client**. They then return the **Client ID** shown in the table to the calling agent. The administrator can later choose **Revoke** on the same row to remove the client's access.
 
-The configuration and login APIs belong to the browser application and reject bearer credentials. External clients use only public discovery, the A2A OAuth token endpoint, and authenticated A2A operations. For the complete administrator workflow, see [Register a calling agent](USAGE.md#register-a-calling-agent).
+Configuration and login routes exist only on the private application listener and reject bearer credentials. They return `404` on the public A2A listener. External clients use only public discovery, the A2A OAuth token endpoint, and authenticated A2A operations. For the complete administrator workflow, see [Register a calling agent](USAGE.md#register-a-calling-agent).
 
 ## 3. Obtain an access token
 
