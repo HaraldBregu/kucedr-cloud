@@ -20,7 +20,8 @@ The signed-in application has a persistent left sidebar and one main content are
 | --- | --- | --- |
 | Dashboard | `/config` | Provider status, client count, signed-in username, links to configuration pages, and an explanation of the encryption key and what it protects. An unconfigured provider offers a setup link. |
 | Clients | `/config/clients` | Register a calling agent with a name and public Ed25519 JWK, list client IDs, and revoke access with confirmation. |
-| Provider | `/config/provider` | Select a provider, enter a model and API key, save changes, or remove the provider with confirmation. |
+| Provider | `/config/provider` | Save OpenAI, Anthropic, and DeepSeek independently; edit each model/key, choose the active provider, or remove a selected provider. |
+| Administrator | `/config/administrator` | Change the username and/or password after confirming the current password. All sessions end after a successful change. |
 | A2A Config | `/config/a2a` | Review OAuth issuer, token endpoint, A2A resource, scope, and authentication method used by clients. Link to client registration. |
 
 A2A connection values come from deployment configuration and are read-only in the browser. Changing the public origin uses `KUCEDR_CLOUD_PUBLIC_URL` and a service restart; this flow does not introduce a second source of connection settings. “AUA config” is interpreted as the existing A2A connection configuration.
@@ -39,11 +40,14 @@ Each page has a descriptive document title and heading. Navigation uses native l
 - Registration and login show inline errors and disable form controls while submitting.
 - The dashboard explicitly shows an unconfigured provider and zero clients. Agent runs require a provider, but all configuration pages remain available.
 - Provider and client pages show saving feedback, success, validation errors, and empty states. Errors retain entered values. API keys are cleared after a successful save and never returned by the API.
+- The first saved provider becomes active. Adding or editing another provider retains the active selection. Removing the active provider leaves agent runs unavailable until another saved provider is selected. Existing single-provider configurations remain readable without a migration or startup rewrite.
 - Removing a provider stays on Provider. Registering or revoking a client stays on Clients.
 - An expired session sends the user to login. Protected pages never return configuration data to signed-out visitors.
 
 ## Verification
 
 Run `npm test`, `npm run typecheck`, and `npm run build`. Authentication tests cover chosen usernames, first registration, repeat-registration rejection, login/logout, restart persistence, session and CSRF enforcement, every page guard, and dashboard access without a provider. Browser verification covers registration to dashboard, sidebar navigation and refresh, provider save/remove, client register/revoke, logout/login, and desktop/narrow layouts.
+
+The Administrator page requires the current password and a nonblank username; a new password is optional and must be confirmed. Successful changes rotate the session secret, revoke every session, and return to login. Incorrect current passwords or validation failures retain the form and leave credentials unchanged.
 
 See [the usage guide](USAGE.md) for deployment and configuration instructions.

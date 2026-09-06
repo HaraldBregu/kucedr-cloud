@@ -87,7 +87,7 @@ Then open the same local browser URL. The SSH connection encrypts traffic betwee
 
 On the first visit, choose a username and create a password of at least 12 characters. No administrator token is needed. Registration is available only once; after an administrator exists, another account cannot be created or used to replace it.
 
-Registration signs you in and opens the dashboard immediately. Choose any nonblank username up to 100 characters, including Unicode, spaces, and punctuation; sign-in ignores case and surrounding whitespace. The left sidebar opens separate **Dashboard**, **Clients**, **Provider**, and **A2A Config** pages. Provider setup is optional until you run an agent. See [Application flow](FLOW.md) for the page map and interaction states. Later visits use the administrator username and password. Existing administrator accounts and saved configuration are retained; sign in on the private application origin after switching from the previous shared listener.
+Registration signs you in and opens the dashboard immediately. Choose any nonblank username up to 100 characters, including Unicode, spaces, and punctuation; sign-in ignores case and surrounding whitespace. The left sidebar opens separate **Dashboard**, **Clients**, **Provider**, **A2A Config**, and **Administrator** pages. Provider setup is optional until you run an agent. See [Application flow](FLOW.md) for the page map and interaction states. Later visits use the administrator username and password. Existing administrator accounts and saved configuration are retained; sign in on the private application origin after switching from the previous shared listener.
 
 Browser sessions last 12 hours, use an HTTP-only same-site cookie, and are revoked when you log out. Passwords and provider API keys are never stored in browser storage.
 
@@ -95,12 +95,21 @@ Browser sessions last 12 hours, use an HTTP-only same-site cookie, and are revok
 
 Configure the provider in the browser after signing in at `/config` on the private application origin. Provider, model, API key, base URL, and model-option environment fallbacks are not supported.
 
-1. Open **Provider** in the left sidebar, select the provider, enter the model ID and API key, then choose **Save provider**.
-2. Open **Dashboard** and confirm that its **Provider** summary shows the selected provider and model.
-3. To update the model later, edit the **Provider** form and choose **Save provider**. Leave the API key blank to retain the saved key for the same provider. Changing providers requires a new API key.
-4. To remove the configuration, choose **Remove provider** and confirm. New agent runs remain unavailable until another provider is configured.
+1. Open **Provider** in the left sidebar, select OpenAI, Anthropic, or DeepSeek, enter its model ID and API key, then choose **Save provider**. The first saved provider becomes active.
+2. Select another provider and save its own model and key. Each provider keeps one independent configuration; saving another does not replace or activate it.
+3. In **Saved providers**, choose **Use provider** to select which provider new agent runs use. **Dashboard** shows the active provider and model.
+4. To edit a saved provider, select it in the form. Its model loads automatically; leave the API key blank to retain that provider’s saved key.
+5. **Remove provider** removes only the provider selected in the form. If it was active, select another saved provider before starting new agent runs. Other saved configurations are retained.
+
+Existing encrypted single-provider settings remain available. Saved providers, their keys, and the active choice persist across restarts. A run already assigned to a provider can still resolve that provider after the active selection changes.
 
 Open **Clients** to register or revoke calling agents. Open **A2A Config** to review OAuth connection details; these deployment-derived values are read-only. The API key is never returned to the browser; kucedr-cloud encrypts it with `KUCEDR_CLOUD_ENCRYPTION_KEY` before writing it to the data volume. Administrator bearer-token automation is no longer supported.
+
+## Change administrator credentials
+
+Open **Administrator** in the left sidebar. Edit the username, enter your **Current password**, and optionally enter and confirm a **New password** of at least 12 characters. Leave the new password fields blank to keep the existing password.
+
+Choose **Save account**. All browser sessions are signed out, then the login page opens. Sign in using the updated username and password. A wrong current password or invalid input leaves your account unchanged. Only the existing administrator can make these changes; registration remains closed.
 
 ## Verify discovery
 

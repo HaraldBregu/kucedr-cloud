@@ -145,6 +145,15 @@ test('runtime resolves only encrypted provider configuration', () => {
 			baseURL: 'https://api.anthropic.com',
 		});
 		assert.equal(getResolvedProvider('deepseek'), undefined);
+		secureStore.setProvider({ provider: 'openai', model: 'other-model', apiKey: 'other-key' });
+		assert.equal(getProviderId(), 'anthropic');
+		assert.equal(getModelId('openai'), 'other-model');
+		assert.equal(secureStore.activateProvider('openai'), true);
+		assert.equal(getProviderId(), 'openai');
+		assert.equal(getModelId(), 'other-model');
+		assert.equal(getModelId('anthropic'), 'secure-model');
+		assert.equal(getResolvedProvider('anthropic')?.apiKey, 'secure-key');
+		assert.equal(getResolvedProvider('openai')?.apiKey, 'other-key');
 		assert.equal(secureStore.deleteProvider(), true);
 		assert.equal(getProviderId(), undefined);
 		assert.equal(getModelId(), undefined);

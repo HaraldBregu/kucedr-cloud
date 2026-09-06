@@ -26,7 +26,13 @@ test('config UI registers one administrator and protects browser sessions', asyn
 		assert.equal(initialRoot.statusCode, 302);
 		assert.equal(initialRoot.headers.location, '/config/register');
 
-		for (const url of ['/config/clients', '/config/provider', '/config/a2a', '/config/setup']) {
+		for (const url of [
+			'/config/clients',
+			'/config/provider',
+			'/config/a2a',
+			'/config/administrator',
+			'/config/setup',
+		]) {
 			const page = await server.inject(url);
 			assert.equal(page.statusCode, 302);
 			assert.equal(page.headers.location, '/config/register');
@@ -229,7 +235,12 @@ test('config UI registers one administrator and protects browser sessions', asyn
 			).statusCode,
 			200
 		);
-		for (const url of ['/config/clients', '/config/provider', '/config/a2a']) {
+		for (const url of [
+			'/config/clients',
+			'/config/provider',
+			'/config/a2a',
+			'/config/administrator',
+		]) {
 			const page = await server.inject({ method: 'GET', url, headers: { cookie } });
 			assert.equal(page.statusCode, 200);
 			assert.equal(page.headers['cache-control'], 'no-store');
@@ -422,6 +433,9 @@ test('authentication and configuration APIs reject requests outside the applicat
 			['GET', '/config'],
 			['GET', '/config/api'],
 			['PUT', '/config/provider'],
+			['PUT', '/config/provider/active'],
+			['DELETE', '/config/provider/openai'],
+			['PUT', '/config/administrator'],
 			['DELETE', '/config/provider'],
 			['POST', '/config/clients'],
 			['DELETE', '/config/clients/11111111-1111-4111-8111-111111111111'],
@@ -475,6 +489,9 @@ test('configuration APIs reject bearer credentials even alongside an authenticat
 			['GET', '/config'],
 			['GET', '/config/api'],
 			['PUT', '/config/provider'],
+			['PUT', '/config/provider/active'],
+			['DELETE', '/config/provider/openai'],
+			['PUT', '/config/administrator'],
 			['DELETE', '/config/provider'],
 			['POST', '/config/clients'],
 			['DELETE', '/config/clients/11111111-1111-4111-8111-111111111111'],
