@@ -18,7 +18,7 @@ The signed-in application has a persistent left sidebar and one main content are
 
 | Sidebar item | URL | Contents and actions |
 | --- | --- | --- |
-| Dashboard | `/config` | Provider status, client count, signed-in username, and links to configuration pages. An unconfigured provider offers a setup link. |
+| Dashboard | `/config` | Provider status, client count, signed-in username, links to configuration pages, and an explanation of the encryption key and what it protects. An unconfigured provider offers a setup link. |
 | Clients | `/config/clients` | Register a calling agent with a name and public Ed25519 JWK, list client IDs, and revoke access with confirmation. |
 | Provider | `/config/provider` | Select a provider, enter a model and API key, save changes, or remove the provider with confirmation. |
 | A2A Config | `/config/a2a` | Review OAuth issuer, token endpoint, A2A resource, scope, and authentication method used by clients. Link to client registration. |

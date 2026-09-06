@@ -35,12 +35,14 @@ Copy the key into `.env`:
 ```dotenv
 KUCEDR_CLOUD_PUBLIC_URL=https://agent.example.com
 KUCEDR_CLOUD_APP_URL=http://127.0.0.1:3001
-KUCEDR_CLOUD_CONFIG_KEY=<generated-value>
+KUCEDR_CLOUD_ENCRYPTION_KEY=<generated-value>
 ```
 
 `KUCEDR_CLOUD_PUBLIC_URL` is the public A2A origin only. Do not add `/a2a` to it. Production public URLs must use HTTPS; client assertions and A2A access tokens must not cross an unencrypted network. `KUCEDR_CLOUD_APP_URL` is the separate browser application origin, defaulting to `http://127.0.0.1:3001`; it must differ from `KUCEDR_CLOUD_PUBLIC_URL`. Loopback HTTP is suitable for local administration or access through an encrypted SSH tunnel. Keep the configuration key out of calling-agent environments.
 
-Back up the exact `KUCEDR_CLOUD_CONFIG_KEY` in a protected secret manager before starting kucedr-cloud. It encrypts the persisted provider and token-signing secrets. Losing or replacing it makes the existing secure configuration unreadable and prevents startup. Online rotation of this key is not currently supported.
+Back up the exact `KUCEDR_CLOUD_ENCRYPTION_KEY` in a protected secret manager before starting kucedr-cloud. It encrypts the persisted provider and token-signing secrets. Losing or replacing it makes the existing secure configuration unreadable and prevents startup. Online rotation of this key is not currently supported. The **Dashboard** explains the encryption key's purpose without displaying its value.
+
+For existing deployments, rename `KUCEDR_CLOUD_CONFIG_KEY` to `KUCEDR_CLOUD_ENCRYPTION_KEY` in the server environment or `.env` file, keeping its exact value. The encrypted configuration format is unchanged; do not generate a replacement key.
 
 Validate and start the container:
 
@@ -69,7 +71,7 @@ The private application listener uses port 3001 by default. Native startup binds
 
 The configuration and authentication APIs support the built-in browser application. They reject every `Authorization` header, including administrator and A2A bearer tokens. Configuration data requires a valid session cookie. API reads require same-origin request metadata; registration, login, logout, and configuration changes require an `Origin` matching `KUCEDR_CLOUD_APP_URL`. Authenticated changes also require the session's CSRF token. The browser supplies these automatically.
 
-`KUCEDR_CLOUD_CONFIG_KEY` encrypts administrator credentials and provider secrets at rest and remains a deployment secret. Administrator registration requires only a chosen username and password.
+`KUCEDR_CLOUD_ENCRYPTION_KEY` encrypts administrator credentials and provider secrets at rest and remains a deployment secret. Administrator registration requires only a chosen username and password.
 
 The listener split prevents public A2A callers from reaching administration routes. Origin, Fetch Metadata, and CSRF checks additionally protect the private browser flow against cross-site use. These headers do not establish cryptographic application identity: a non-browser client with access to the private listener can spoof them. Administrator credentials and session cookies remain secrets, and exposing the private listener publicly would remove the network boundary.
 
@@ -98,7 +100,7 @@ Configure the provider in the browser after signing in at `/config` on the priva
 3. To update the model later, edit the **Provider** form and choose **Save provider**. Leave the API key blank to retain the saved key for the same provider. Changing providers requires a new API key.
 4. To remove the configuration, choose **Remove provider** and confirm. New agent runs remain unavailable until another provider is configured.
 
-Open **Clients** to register or revoke calling agents. Open **A2A Config** to review OAuth connection details; these deployment-derived values are read-only. The API key is never returned to the browser; kucedr-cloud encrypts it with `KUCEDR_CLOUD_CONFIG_KEY` before writing it to the data volume. Administrator bearer-token automation is no longer supported.
+Open **Clients** to register or revoke calling agents. Open **A2A Config** to review OAuth connection details; these deployment-derived values are read-only. The API key is never returned to the browser; kucedr-cloud encrypts it with `KUCEDR_CLOUD_ENCRYPTION_KEY` before writing it to the data volume. Administrator bearer-token automation is no longer supported.
 
 ## Verify discovery
 
@@ -502,7 +504,7 @@ Do not use `docker compose down --volumes` unless you intend to delete the works
 
 ### Compose reports a missing variable
 
-`KUCEDR_CLOUD_PUBLIC_URL` and `KUCEDR_CLOUD_CONFIG_KEY` must have non-empty values. Provider, model, and API key values are entered on the **Provider** page after administrator registration. Check the file, then run:
+`KUCEDR_CLOUD_PUBLIC_URL` and `KUCEDR_CLOUD_ENCRYPTION_KEY` must have non-empty values. Provider, model, and API key values are entered on the **Provider** page after administrator registration. Check the file, then run:
 
 ```bash
 docker compose config --quiet

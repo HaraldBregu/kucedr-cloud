@@ -126,6 +126,24 @@
 								<a class="button button-secondary" href="/config/a2a">View A2A configuration</a>
 							</div>
 						</div>
+						<section class="panel dashboard-next" aria-labelledby="encryption-heading">
+							<h2 id="encryption-heading">Encryption key</h2>
+							<p class="section-copy">
+								The server uses this secret key to encrypt saved provider API keys, administrator
+								credentials, and the private key used to sign A2A access tokens.
+							</p>
+							<dl class="details-list">
+								<div>
+									<dt>Environment variable</dt>
+									<dd>KUCEDR_CLOUD_ENCRYPTION_KEY</dd>
+								</div>
+							</dl>
+							<p class="helper">
+								Set it in the server's .env file and back it up securely. Keep the same value across
+								restarts: losing or replacing it makes saved configuration unreadable and prevents
+								startup. The key value is never shown here.
+							</p>
+						</section>
 					</section>
 					<section class="panel" id="provider-panel" hidden>
 						<div class="section-heading">

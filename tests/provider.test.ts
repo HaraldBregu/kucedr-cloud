@@ -112,11 +112,11 @@ test('runtime resolves only encrypted provider configuration', () => {
 	const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'kucedr-cloud-provider-runtime-'));
 	const previous = {
 		dataDirectory: process.env.KUCEDR_CLOUD_DATA_DIR,
-		configurationKey: process.env.KUCEDR_CLOUD_CONFIG_KEY,
+		configurationKey: process.env.KUCEDR_CLOUD_ENCRYPTION_KEY,
 	};
 	try {
 		process.env.KUCEDR_CLOUD_DATA_DIR = directory;
-		delete process.env.KUCEDR_CLOUD_CONFIG_KEY;
+		delete process.env.KUCEDR_CLOUD_ENCRYPTION_KEY;
 		fs.writeFileSync(
 			path.join(directory, 'provider.json'),
 			JSON.stringify({ provider: 'deepseek', model: 'deepseek-model', apiKey: 'deepseek-key' }),
@@ -127,7 +127,7 @@ test('runtime resolves only encrypted provider configuration', () => {
 		assert.equal(getModelId(), undefined);
 		assert.equal(getResolvedProvider('deepseek'), undefined);
 
-		process.env.KUCEDR_CLOUD_CONFIG_KEY = '44'.repeat(32);
+		process.env.KUCEDR_CLOUD_ENCRYPTION_KEY = '44'.repeat(32);
 		const secureStore = new ConfigurationStore(directory, Buffer.from('44'.repeat(32), 'hex'));
 		assert.equal(getProviderId(), undefined);
 		assert.equal(getModelId(), undefined);
@@ -155,7 +155,7 @@ test('runtime resolves only encrypted provider configuration', () => {
 	} finally {
 		for (const [name, value] of [
 			['KUCEDR_CLOUD_DATA_DIR', previous.dataDirectory],
-			['KUCEDR_CLOUD_CONFIG_KEY', previous.configurationKey],
+			['KUCEDR_CLOUD_ENCRYPTION_KEY', previous.configurationKey],
 		] as const) {
 			if (value === undefined) delete process.env[name];
 			else process.env[name] = value;

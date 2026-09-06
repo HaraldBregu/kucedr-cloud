@@ -11,7 +11,7 @@ An A2A client needs only:
 - its own Ed25519 private key; and
 - a short-lived OAuth access token obtained with that key.
 
-The client must never receive or send the model provider API key or `KUCEDR_CLOUD_CONFIG_KEY`. kucedr-cloud uses the provider API key internally when invoking the configured model. The administrator creates an account with a username and password on first startup. The administrator registers and revokes clients through the signed-in browser application; calling agents never use its password or session cookie. See [API boundaries](USAGE.md#understand-the-api-boundaries) for the browser-session model and its network-isolation limits.
+The client must never receive or send the model provider API key or `KUCEDR_CLOUD_ENCRYPTION_KEY`. kucedr-cloud uses the provider API key internally when invoking the configured model. The administrator creates an account with a username and password on first startup. The administrator registers and revokes clients through the signed-in browser application; calling agents never use its password or session cookie. See [API boundaries](USAGE.md#understand-the-api-boundaries) for the browser-session model and its network-isolation limits.
 
 ## Interaction flow
 

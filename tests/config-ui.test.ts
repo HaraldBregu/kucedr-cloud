@@ -196,6 +196,7 @@ test('config UI registers one administrator and protects browser sessions', asyn
 		assert.match(authenticatedPage.body, /href="\/config\/clients"/);
 		assert.match(authenticatedPage.body, /href="\/config\/provider"/);
 		assert.match(authenticatedPage.body, /href="\/config\/a2a"/);
+		assert.doesNotMatch(authenticatedPage.body, new RegExp(CONFIGURATION_KEY.toString('hex')));
 		assert.doesNotMatch(authenticatedPage.body, /setup-provider-form/);
 		const setupPage = await server.inject({
 			method: 'GET',

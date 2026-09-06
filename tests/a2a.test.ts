@@ -133,7 +133,7 @@ test('production separates private application routes from public OAuth and A2A'
 			configurationKey: null,
 			publicUrl: null,
 		}),
-		/KUCEDR_CLOUD_CONFIG_KEY/
+		/KUCEDR_CLOUD_ENCRYPTION_KEY/
 	);
 
 	const { application, a2a: server } = await createServers(unusedAgent(), {

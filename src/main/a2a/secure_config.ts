@@ -25,13 +25,13 @@ export function resolveSecureA2aConfig(input: SecureA2aConfigInput): SecureA2aCo
 			: input.appUrl?.trim();
 	const rawKey =
 		input.configurationKey === undefined
-			? process.env.KUCEDR_CLOUD_CONFIG_KEY?.trim()
+			? process.env.KUCEDR_CLOUD_ENCRYPTION_KEY?.trim()
 			: input.configurationKey?.trim();
 	const publicUrl =
 		input.publicUrl === undefined
 			? process.env.KUCEDR_CLOUD_PUBLIC_URL?.trim()
 			: input.publicUrl?.trim();
-	if (!rawKey) throw new Error('KUCEDR_CLOUD_CONFIG_KEY is required.');
+	if (!rawKey) throw new Error('KUCEDR_CLOUD_ENCRYPTION_KEY is required.');
 	if (!publicUrl) throw new Error('KUCEDR_CLOUD_PUBLIC_URL is required.');
 	if (!appUrl) throw new Error('KUCEDR_CLOUD_APP_URL is required.');
 	const resolvedAppUrl = resolvePublicUrl(appUrl, 'KUCEDR_CLOUD_APP_URL');
