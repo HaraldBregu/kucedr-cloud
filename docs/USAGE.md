@@ -518,7 +518,7 @@ kucedr-cloud's persistent workspace is `/data/workspace` inside the container. T
 
 Shell commands, MCP servers, subagents, administrative APIs, and configuration changes are unavailable through A2A. Put durable behavioral instructions in the workspace's `AGENTS.md` file by asking kucedr-cloud to create or update it.
 
-Message text is limited to 32 KiB, general HTTP request bodies are limited to 100 KiB, and only `text/plain` message parts are accepted. The token form has a smaller 8 KiB and 12-parameter limit. Task-list `pageSize` and `historyLength` cannot exceed 100. Terminal task records are retained for 30 days, and task/conversation data persists in the `idra-data` Docker volume.
+Message text is limited to 32 KiB, general HTTP request bodies are limited to 100 KiB, and only `text/plain` message parts are accepted. The token form has a smaller 8 KiB and 12-parameter limit. Task-list `pageSize` and `historyLength` cannot exceed 100. Terminal task records are retained for 30 days, and task/conversation data persists in the `kucedr-cloud-data` Docker volume.
 
 The in-memory rate limits are 30 configuration requests per minute per source IP, 10 token requests per minute per source IP and client, 60 authenticated A2A requests per minute per client, and 600 pre-authentication A2A requests per minute per network source. A limited response returns `429 Too Many Requests` and `Retry-After: 60`. Limits reset when kucedr-cloud restarts.
 

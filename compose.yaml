@@ -1,3 +1,5 @@
+name: kucedr-cloud
+
 services:
   app:
     build:
@@ -11,7 +13,7 @@ services:
       KUCEDR_CLOUD_CONFIG_KEY: ${KUCEDR_CLOUD_CONFIG_KEY:?set KUCEDR_CLOUD_CONFIG_KEY in .env}
       KUCEDR_CLOUD_LISTEN_ADDRESS: 0.0.0.0
     volumes:
-      - idra-data:/data
+      - kucedr-cloud-data:/data
     read_only: true
     tmpfs:
       - /tmp:rw,noexec,nosuid,nodev,size=64m
@@ -23,4 +25,4 @@ services:
     stop_grace_period: 30s
 
 volumes:
-  idra-data:
+  kucedr-cloud-data:

@@ -1,6 +1,6 @@
-# Contributing to Idra
+# Contributing to kucedr-cloud
 
-Thank you for helping improve Idra. Keep each contribution focused on one problem and make the
+Thank you for helping improve kucedr-cloud. Keep each contribution focused on one problem and make the
 smallest change that solves it.
 
 ## Prerequisites
@@ -11,8 +11,8 @@ smallest change that solves it.
 ## Set up the project
 
 ```bash
-git clone https://github.com/HaraldBregu/idra.git
-cd idra
+git clone https://github.com/HaraldBregu/kucedr-cloud.git
+cd kucedr-cloud
 npm ci
 cp .env.example .env
 npm run dev
@@ -30,7 +30,7 @@ do not require live provider credentials.
 - `src/main/shared` contains shared utilities and types.
 - `src/ui` contains the browser interface.
 - `tests` contains the Node test suites.
-- `public` contains public assets such as the Idra logo.
+- `public` contains public assets such as the kucedr-cloud logo.
 
 ## Make a change
 

@@ -14,7 +14,7 @@
     "node": ">=26.7.0",
     "npm": ">=12.0.2"
   },
-  "copyright": "© 2026 Idra Project. All rights reserved.",
+  "copyright": "© 2026 kucedr-cloud Project. All rights reserved.",
   "type": "module",
   "license": "MIT",
   "main": "./src/main/index.ts",
