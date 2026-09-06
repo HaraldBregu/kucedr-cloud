@@ -1,17 +1,27 @@
 import { Agent } from './agent/agent';
-import { createA2aServer } from './a2a/server';
+import { createServers } from './runtime';
 
 const agent = new Agent({ mcpEnabled: false });
-const server = await createA2aServer(agent);
+const { application, a2a } = await createServers(agent);
 
-await server.listen({
-	port: Number(process.env.KUCEDR_CLOUD_PORT ?? 3000),
-	host: process.env.KUCEDR_CLOUD_LISTEN_ADDRESS?.trim() || '127.0.0.1',
-});
+try {
+	await application.listen({
+		port: Number(process.env.KUCEDR_CLOUD_APP_PORT ?? 3001),
+		host: process.env.KUCEDR_CLOUD_APP_LISTEN_ADDRESS?.trim() || '127.0.0.1',
+	});
+	await a2a.listen({
+		port: Number(process.env.KUCEDR_CLOUD_PORT ?? 3000),
+		host: process.env.KUCEDR_CLOUD_LISTEN_ADDRESS?.trim() || '127.0.0.1',
+	});
+} catch (error) {
+	agent.destroy();
+	await Promise.all([application.close(), a2a.close()]);
+	throw error;
+}
 
 const shutdown = async (): Promise<void> => {
 	agent.destroy();
-	await server.close();
+	await Promise.all([application.close(), a2a.close()]);
 };
 
 process.once('SIGINT', shutdown);

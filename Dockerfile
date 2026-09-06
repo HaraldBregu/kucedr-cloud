@@ -17,7 +17,7 @@ COPY src/ui ./src/ui
 RUN mkdir -p /data/workspace && chown -R node:node /app /data
 
 USER node
-EXPOSE 3000
+EXPOSE 3000 3001
 VOLUME ["/data"]
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \

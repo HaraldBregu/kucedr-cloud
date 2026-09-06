@@ -1,11 +1,11 @@
 import net from 'node:net';
 
-export function resolvePublicUrl(value: string): string {
+export function resolvePublicUrl(value: string, setting = 'KUCEDR_CLOUD_PUBLIC_URL'): string {
 	let url: URL;
 	try {
 		url = new URL(value.trim());
 	} catch {
-		throw new Error('KUCEDR_CLOUD_PUBLIC_URL must be a valid URL origin.');
+		throw new Error(`${setting} must be a valid URL origin.`);
 	}
 	const loopback =
 		url.hostname === 'localhost' ||
@@ -21,7 +21,7 @@ export function resolvePublicUrl(value: string): string {
 		(url.protocol !== 'https:' && !(url.protocol === 'http:' && loopback))
 	) {
 		throw new Error(
-			'KUCEDR_CLOUD_PUBLIC_URL must be an HTTPS origin without credentials, path, query, or fragment; HTTP is allowed only for loopback development.'
+			`${setting} must be an HTTPS origin without credentials, path, query, or fragment; HTTP is allowed only for loopback access.`
 		);
 	}
 	return url.origin;
