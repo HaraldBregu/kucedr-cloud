@@ -61,20 +61,20 @@ test('administrator updates validate credentials, revoke sessions, and persist e
 					});
 					assert.equal(rejected.statusCode, expected);
 				}
-				for (const invalid of [
+				for (const [index, invalid] of [
 					{ ...payload, currentPassword: 'incorrect-password' },
 					{ ...payload, username: '   ' },
 					{ ...payload, username: 'x'.repeat(101) },
 					{ ...payload, newPassword: 'short' },
 					{ ...payload, newPassword: '界'.repeat(400) },
 					{ ...payload, username },
-				]) {
+				].entries()) {
 					const rejected = await server.inject({
 						method: 'PUT',
 						url: '/config/administrator',
 						headers,
 						payload: invalid,
-						remoteAddress: `192.0.2.${Math.floor(Math.random() * 200) + 1}`,
+						remoteAddress: `192.0.2.${index + 1}`,
 					});
 					assert.equal(rejected.statusCode, 400, rejected.body);
 					assert.equal(rejected.headers['set-cookie'], undefined);
