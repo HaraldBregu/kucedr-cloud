@@ -15,7 +15,7 @@ import { RequestLimiter } from '../src/main/oauth/limit';
 const ADMIN_TOKEN = 'config-ui-admin-token-123456789012345';
 const CONFIGURATION_KEY = Buffer.from('22'.repeat(32), 'hex');
 const PUBLIC_URL = 'https://kucedr-cloud.example';
-const USERNAME = 'administrator';
+const USERNAME = 'zoë / 東京!';
 const PASSWORD = 'correct horse battery staple';
 
 test('config UI registers one administrator and protects browser sessions', async () => {
@@ -25,6 +25,12 @@ test('config UI registers one administrator and protects browser sessions', asyn
 		const initialRoot = await server.inject({ method: 'GET', url: '/' });
 		assert.equal(initialRoot.statusCode, 302);
 		assert.equal(initialRoot.headers.location, '/config/register');
+
+		for (const url of ['/config/clients', '/config/provider', '/config/a2a', '/config/setup']) {
+			const page = await server.inject(url);
+			assert.equal(page.statusCode, 302);
+			assert.equal(page.headers.location, '/config/register');
+		}
 
 		const protectedPage = await server.inject({
 			method: 'GET',
@@ -180,30 +186,32 @@ test('config UI registers one administrator and protects browser sessions', asyn
 			url: '/config',
 			headers: { accept: 'text/html', cookie },
 		});
-		assert.equal(authenticatedPage.statusCode, 302);
-		assert.equal(authenticatedPage.headers.location, '/config/setup');
+		assert.equal(authenticatedPage.statusCode, 200);
+		assert.match(authenticatedPage.body, /href="\/config\/clients"/);
+		assert.match(authenticatedPage.body, /href="\/config\/provider"/);
+		assert.match(authenticatedPage.body, /href="\/config\/a2a"/);
+		assert.doesNotMatch(authenticatedPage.body, /setup-provider-form/);
 		const setupPage = await server.inject({
 			method: 'GET',
 			url: '/config/setup',
 			headers: { cookie },
 		});
-		assert.equal(setupPage.statusCode, 200);
-		assert.match(setupPage.body, /Connect a model provider/);
-		assert.match(setupPage.body, /id="setup-provider-form"/);
+		assert.equal(setupPage.statusCode, 302);
+		assert.equal(setupPage.headers.location, '/config/provider');
 		const authenticatedLogin = await server.inject({
 			method: 'GET',
 			url: '/config/login',
 			headers: { cookie },
 		});
 		assert.equal(authenticatedLogin.statusCode, 302);
-		assert.equal(authenticatedLogin.headers.location, '/config/setup');
+		assert.equal(authenticatedLogin.headers.location, '/config');
 		const authenticatedRegistration = await server.inject({
 			method: 'GET',
 			url: '/config/register',
 			headers: { cookie },
 		});
 		assert.equal(authenticatedRegistration.statusCode, 302);
-		assert.equal(authenticatedRegistration.headers.location, '/config/setup');
+		assert.equal(authenticatedRegistration.headers.location, '/config');
 		assert.equal(
 			(
 				await server.inject({
@@ -214,6 +222,18 @@ test('config UI registers one administrator and protects browser sessions', asyn
 			).statusCode,
 			200
 		);
+		for (const url of ['/config/clients', '/config/provider', '/config/a2a']) {
+			const page = await server.inject({ method: 'GET', url, headers: { cookie } });
+			assert.equal(page.statusCode, 200);
+			assert.equal(page.headers['cache-control'], 'no-store');
+			const signedOut = await server.inject(url);
+			assert.equal(signedOut.statusCode, 302);
+			assert.equal(signedOut.headers.location, '/config/login');
+		}
+		const signedInRoot = await server.inject({ method: 'GET', url: '/', headers: { cookie } });
+		assert.equal(signedInRoot.headers.location, '/config');
+		assert.equal((await server.inject('/config/assets/page.js')).statusCode, 200);
+
 		const providerPayload = { provider: 'OpenAI', model: 'gpt-test', apiKey: 'provider-secret' };
 		assert.equal(
 			(
@@ -262,7 +282,7 @@ test('config UI registers one administrator and protects browser sessions', asyn
 			headers: { cookie },
 		});
 		assert.equal(completedSetup.statusCode, 302);
-		assert.equal(completedSetup.headers.location, '/config');
+		assert.equal(completedSetup.headers.location, '/config/provider');
 		assert.equal(
 			(
 				await server.inject({
@@ -292,8 +312,7 @@ test('config UI registers one administrator and protects browser sessions', asyn
 			url: '/config',
 			headers: { accept: 'text/html', cookie },
 		});
-		assert.equal(removedProviderPage.statusCode, 302);
-		assert.equal(removedProviderPage.headers.location, '/config/setup');
+		assert.equal(removedProviderPage.statusCode, 200);
 		assert.equal(
 			(
 				await server.inject({
@@ -370,7 +389,7 @@ test('config UI registers one administrator and protects browser sessions', asyn
 		assert.equal(wrongUsername.statusCode, 401);
 		assert.equal(wrongPassword.statusCode, 401);
 		assert.equal(wrongUsername.body, wrongPassword.body);
-		const loginResponse = await login(server, USERNAME, PASSWORD);
+		const loginResponse = await login(server, `  ${USERNAME.toUpperCase()}  `, PASSWORD);
 		assert.equal(loginResponse.statusCode, 200);
 
 		const stored = fs.readFileSync(path.join(directory, 'secure-config.json'), 'utf8');

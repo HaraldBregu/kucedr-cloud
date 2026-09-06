@@ -87,7 +87,7 @@ Then open the same local browser URL. The SSH connection encrypts traffic betwee
 
 On the first visit, enter the value of `KUCEDR_CLOUD_ADMIN_TOKEN` in **Setup token**, choose a username, and create a password of at least 12 characters. The form submits the setup credential as `setupToken`; it is never embedded in the page. Registration requires this secret and is available only once. The setup token cannot create another administrator or replace an existing account after registration.
 
-The next setup page requires the model provider, model ID, and API key before the configuration dashboard opens. Later visits use the administrator username and password, without the setup token. Existing administrator accounts and saved configuration are retained; sign in on the private application origin after switching from the previous shared listener.
+Registration signs you in and opens the dashboard immediately. Choose any nonblank username up to 100 characters, including Unicode, spaces, and punctuation; sign-in ignores case and surrounding whitespace. The left sidebar opens separate **Dashboard**, **Clients**, **Provider**, and **A2A Config** pages. Provider setup is optional until you run an agent. See [Application flow](FLOW.md) for the page map and interaction states. Later visits use the administrator username and password, without the setup token. Existing administrator accounts and saved configuration are retained; sign in on the private application origin after switching from the previous shared listener.
 
 Browser sessions last 12 hours, use an HTTP-only same-site cookie, and are revoked when you log out. Passwords, setup tokens, and provider API keys are never stored in browser storage. Keep the deployment setup token out of calling-agent environments.
 
@@ -95,12 +95,12 @@ Browser sessions last 12 hours, use an HTTP-only same-site cookie, and are revok
 
 Configure the provider in the browser after signing in at `/config` on the private application origin. Provider, model, API key, base URL, and model-option environment fallbacks are not supported.
 
-1. On the initial setup page, select **Provider**, enter the model ID and API key, then choose **Finish setup**.
-2. Confirm that the dashboard's **Provider** summary shows the selected provider and model.
+1. Open **Provider** in the left sidebar, select the provider, enter the model ID and API key, then choose **Save provider**.
+2. Open **Dashboard** and confirm that its **Provider** summary shows the selected provider and model.
 3. To update the model later, edit the **Provider** form and choose **Save provider**. Leave the API key blank to retain the saved key for the same provider. Changing providers requires a new API key.
 4. To remove the configuration, choose **Remove provider** and confirm. New agent runs remain unavailable until another provider is configured.
 
-The dashboard also displays registered clients and OAuth connection details. The API key is never returned to the browser; kucedr-cloud encrypts it with `KUCEDR_CLOUD_CONFIG_KEY` before writing it to the data volume. Administrator bearer-token automation is no longer supported.
+Open **Clients** to register or revoke calling agents. Open **A2A Config** to review OAuth connection details; these deployment-derived values are read-only. The API key is never returned to the browser; kucedr-cloud encrypts it with `KUCEDR_CLOUD_CONFIG_KEY` before writing it to the data volume. Administrator bearer-token automation is no longer supported.
 
 ## Verify discovery
 
@@ -153,7 +153,7 @@ writeFileSync('client-public.jwk', JSON.stringify(publicKey.export({ format: 'jw
 
 Transfer only `client-public.jwk` to the trusted operator environment. `client-private.jwk` must remain on the calling-agent host and should be stored in a platform keystore or secret manager when available. The script refuses to overwrite an existing key file.
 
-Sign in to `/config` on the private application origin and locate **Registered clients**. Enter a descriptive **Client name**, paste the contents of `client-public.jwk` into **Ed25519 public JWK**, and choose **Register client**. Confirm the new entry appears in the table, then copy its **Client ID**.
+Sign in on the private application origin and open **Clients** in the left sidebar (`/config/clients`). Enter a descriptive **Client name**, paste the contents of `client-public.jwk` into **Ed25519 public JWK**, and choose **Register client**. Confirm the new entry appears in the table, then copy its **Client ID**.
 
 Return the client ID and public kucedr-cloud URL to the calling-agent environment through a trusted channel:
 
@@ -397,7 +397,7 @@ Cancellation can fail if the task is already terminal or is no longer active.
 
 ## Revoke a calling agent
 
-Sign in to the private application at `/config`, find the client in **Registered clients**, and choose **Revoke**. Confirm the prompt and verify that its row disappears from the table.
+Sign in to the private application, open **Clients** in the left sidebar, find the client in **Registered clients**, and choose **Revoke**. Confirm the prompt and verify that its row disappears from the table.
 
 Subsequent requests using that client's access tokens are rejected immediately. Revocation does not terminate an already admitted HTTP request, active stream, or running task. Deleting a client also makes its existing tasks and conversations inaccessible through the API; the stored records remain until their normal retention cleanup, and registering a new client does not inherit them.
 
@@ -504,7 +504,7 @@ Do not use `docker compose down --volumes` unless you intend to delete the works
 
 ### Compose reports a missing variable
 
-`KUCEDR_CLOUD_PUBLIC_URL`, `KUCEDR_CLOUD_ADMIN_TOKEN`, and `KUCEDR_CLOUD_CONFIG_KEY` must have non-empty values. Provider, model, and API key values are entered in the browser setup page after administrator registration. Check the file, then run:
+`KUCEDR_CLOUD_PUBLIC_URL`, `KUCEDR_CLOUD_ADMIN_TOKEN`, and `KUCEDR_CLOUD_CONFIG_KEY` must have non-empty values. Provider, model, and API key values are entered on the **Provider** page after administrator registration. Check the file, then run:
 
 ```bash
 docker compose config --quiet
@@ -540,7 +540,7 @@ Add `A2A-Version: 1.0`. Missing, `0.3`, and unsupported future versions are reje
 
 ### Opening the public server URL returns `404`
 
-This is expected. The public A2A listener has no home page, login page, or configuration API. A2A clients use `/.well-known/agent-card.json` for discovery and `/a2a` for agent operations. Open the separate private application origin to administer the server; its `/` redirects to administrator registration on a new installation and login after an account exists.
+This is expected. The public A2A listener has no home page, login page, or configuration API. A2A clients use `/.well-known/agent-card.json` for discovery and `/a2a` for agent operations. Open the separate private application origin to administer the server; its `/` redirects to administrator registration on a new installation, login when signed out, or the dashboard with a valid session.
 
 ### Streaming arrives all at once
 
