@@ -1,6 +1,14 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import {
+	existsSync,
+	mkdtempSync,
+	mkdirSync,
+	readFileSync,
+	rmSync,
+	statSync,
+	writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
@@ -142,6 +150,10 @@ esac
 					environment.FAKE_MODE = scenario === 'rerun' ? 'download-failure' : 'existing-volume';
 					environment.KUCEDR_CLOUD_PUBLIC_URL = 'https://changed.example.com';
 					if (scenario === 'restore-config') rmSync(path.join(install, '.env'));
+					else {
+						previousConfig += `\nSHELL_LITERAL=$(touch '${path.join(directory, 'executed')}')\n`;
+						writeFileSync(path.join(install, '.env'), previousConfig);
+					}
 				}
 				const result = spawnSync('/bin/sh', [], {
 					input: installer,
@@ -174,6 +186,7 @@ esac
 					assert.match(output, /http:\/\/127\.0\.0\.1:3001\/config/);
 					if (attempt === 1) {
 						assert.equal(config, previousConfig);
+						assert.equal(existsSync(path.join(directory, 'executed')), false);
 						assert.doesNotMatch(commands, /curl |openssl /);
 					} else {
 						assert.match(
