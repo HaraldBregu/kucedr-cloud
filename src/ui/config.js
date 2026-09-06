@@ -289,5 +289,4 @@ async function revokeClient(clientId, name) {
 	}
 }
 
-document.getElementById('copyright-year').textContent = String(new Date().getFullYear());
 initialize();

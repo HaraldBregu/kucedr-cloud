@@ -26,8 +26,7 @@ body {
 .brand,
 .primary-nav,
 .session-actions,
-.section-nav,
-.footer-meta {
+.footer-links {
 	display: flex;
 	align-items: center;
 	gap: 12px;
@@ -62,8 +61,7 @@ body {
 }
 
 .site-header a,
-.site-footer a,
-.section-nav a {
+.site-footer a {
 	text-decoration: none;
 }
 
@@ -74,22 +72,16 @@ body {
 }
 
 .primary-nav a,
-.section-nav a {
+.footer-links a {
 	padding: 8px 10px;
 	color: var(--muted);
 	font-size: 0.8rem;
 	font-weight: 600;
 }
 
-.primary-nav a[aria-current],
 .site-header a:hover,
-.site-footer a:hover,
-.section-nav a:hover {
-	color: var(--accent);
-}
-
-.site-header a[aria-current] {
-	box-shadow: inset 0 -2px var(--accent);
+.site-footer a:hover {
+	color: var(--highlight);
 }
 
 a:focus-visible {
@@ -125,67 +117,31 @@ a:focus-visible {
 	line-height: 1.1;
 }
 
-.section-nav {
-	flex-wrap: wrap;
-	gap: 4px;
-	padding-block: 4px;
-	border-block: 1px solid var(--border);
-}
-
 #main-content,
 #config-view section {
 	scroll-margin-top: 160px;
 }
 
-.footer-grid {
-	display: grid;
-	grid-template-columns: 1.5fr repeat(3, 1fr);
-	gap: 32px;
-	padding: 40px 32px;
+.site-footer {
+	--brand-mark-size: 28px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 20px;
+	padding: 20px 24px;
 }
 
-.footer-brand {
-	--brand-mark-size: 32px;
-}
-
-.footer-brand p,
-.footer-brand > a:last-child,
-.footer-links a,
-.footer-bottom {
-	color: var(--muted);
-	font-size: 0.8rem;
+.site-footer .brand {
+	font-size: 1.1rem;
 }
 
 .footer-links {
-	display: flex;
-	flex-direction: column;
-	align-items: start;
-	gap: 8px;
-}
-
-.footer-links h2 {
-	margin: 0 0 8px;
-	font-family: var(--font-mono);
-	font-size: 0.68rem;
-	letter-spacing: 0.08em;
-	text-transform: uppercase;
-}
-
-.footer-bottom {
-	display: flex;
-	justify-content: space-between;
-	gap: 16px;
-	padding: 20px 32px;
-	border-top: 1px solid var(--border);
-}
-
-.footer-meta {
 	flex-wrap: wrap;
-	gap: 20px;
+	gap: 4px;
 }
 
-.footer-bottom a {
-	color: inherit;
+.session-actions {
+	margin-left: auto;
 }
 
 @media (max-width: 1050px) {
@@ -214,15 +170,19 @@ a:focus-visible {
 	.session-actions .status-badge {
 		display: none;
 	}
-	.footer-grid {
-		grid-template-columns: repeat(2, minmax(0, 1fr));
-		padding: 28px 20px;
+	.site-footer {
+		flex-wrap: wrap;
+		padding: 20px 12px;
 	}
-	.footer-brand {
-		grid-column: 1 / -1;
+}
+
+@media (max-width: 400px) {
+	.site-header .brand {
+		--brand-mark-size: 32px;
+		gap: 8px;
+		font-size: 1.25rem;
 	}
-	.footer-bottom {
-		flex-direction: column;
-		padding: 20px;
+	.brand-product {
+		padding-left: 8px;
 	}
 }
