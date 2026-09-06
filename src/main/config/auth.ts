@@ -1,5 +1,6 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import type { RequestLimiter } from '../oauth/limit';
+import { createApplicationAuthentication } from './application';
 import { csrfToken } from './session';
 import { equalText } from './equal';
 import { configurationPrincipal } from './principal';
@@ -12,20 +13,21 @@ type ConfigurationAuthentication = (
 
 export function createConfigurationAuthentication(
 	store: ConfigurationStore,
-	adminToken: string,
 	publicUrl: string,
 	limiter: RequestLimiter
 ): ConfigurationAuthentication {
+	const authenticateApplication = createApplicationAuthentication(publicUrl);
 	return async (request, reply): Promise<unknown> => {
-		reply.header('cache-control', 'no-store');
+		await authenticateApplication(request, reply);
+		if (reply.sent) return;
 		if (!limiter.consume(`config:${request.ip}`, 30, 60_000)) {
 			return reply.code(429).header('retry-after', '60').send({ error: 'Too Many Requests' });
 		}
-		const principal = configurationPrincipal(request, store, adminToken, publicUrl);
+		const principal = configurationPrincipal(request, store, publicUrl);
 		if (!principal) {
-			return reply.code(401).header('www-authenticate', 'Bearer').send({ error: 'Unauthorized' });
+			return reply.code(401).send({ error: 'Unauthorized' });
 		}
-		if (principal.method === 'ui-session' && !['GET', 'HEAD', 'OPTIONS'].includes(request.method)) {
+		if (!['GET', 'HEAD'].includes(request.method)) {
 			const administrator = store.administrator();
 			const origin = request.headers.origin;
 			const submitted = request.headers['x-kucedr-cloud-csrf'];
