@@ -100,9 +100,11 @@ test('the official A2A REST client discovers kucedr-cloud and streams continuous
 		};
 		assert.equal((await fetch(`${baseUrl}/a2a/tasks`, { headers: { cookie } })).status, 401);
 		assert.equal(
-			(await fetch(`${baseUrl}/a2a/tasks`, {
-				headers: { authorization: `Bearer ${adminToken}` },
-			})).status,
+			(
+				await fetch(`${baseUrl}/a2a/tasks`, {
+					headers: { authorization: `Bearer ${adminToken}` },
+				})
+			).status,
 			401
 		);
 		const configuredProvider = await fetch(`${baseUrl}/config/provider`, {

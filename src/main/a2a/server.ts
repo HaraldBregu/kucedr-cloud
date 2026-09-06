@@ -53,13 +53,7 @@ export async function createA2aServer(
 		config.publicUrl,
 		limiter
 	);
-	registerConfigurationUiRoutes(
-		server,
-		store,
-		config.publicUrl,
-		issuer,
-		limiter
-	);
+	registerConfigurationUiRoutes(server, store, config.publicUrl, issuer, limiter);
 	registerConfigurationRoutes(server, store, config.publicUrl, limiter);
 	await registerA2aRoutes(
 		server,
