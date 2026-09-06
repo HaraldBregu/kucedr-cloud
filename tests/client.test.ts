@@ -63,7 +63,9 @@ test('the official A2A REST client discovers kucedr-cloud and streams continuous
 		}
 		throw error;
 	} finally {
-		await Promise.all(probes.map((probe) => new Promise<void>((resolve) => probe.close(() => resolve()))));
+		await Promise.all(
+			probes.map((probe) => new Promise<void>((resolve) => probe.close(() => resolve())))
+		);
 	}
 
 	const [port, appPort] = ports;
@@ -260,7 +262,7 @@ test('the official A2A REST client discovers kucedr-cloud and streams continuous
 				cookie,
 				origin: appUrl,
 				referer: `${appUrl}/config`,
-				'host': new URL(appUrl).host,
+				host: new URL(appUrl).host,
 				'x-forwarded-host': new URL(appUrl).host,
 				'x-forwarded-proto': 'http',
 				'sec-fetch-site': 'same-origin',
@@ -291,7 +293,11 @@ test('the official A2A REST client discovers kucedr-cloud and streams continuous
 				method: route.method,
 				headers: { authorization: `Bearer ${token.access_token}`, cookie, origin: appUrl },
 			});
-			assert.equal(response.status, 404, `${route.method} ${route.path} must be on the A2A listener`);
+			assert.equal(
+				response.status,
+				404,
+				`${route.method} ${route.path} must be on the A2A listener`
+			);
 		}
 
 		const client = await new ClientFactory({
