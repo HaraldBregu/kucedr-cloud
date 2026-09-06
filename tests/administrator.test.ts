@@ -22,14 +22,18 @@ test('administrator updates validate credentials, revoke sessions, and persist e
 		registerConfigurationAuthenticationRoutes(server, store, origin, new RequestLimiter());
 		try {
 			const registered = await server.inject({
-				method: 'POST', url: '/config/auth/register', headers: { origin },
+				method: 'POST',
+				url: '/config/auth/register',
+				headers: { origin },
 				payload: { username, password },
 			});
 			assert.equal(registered.statusCode, 201);
 			const cookie = String(registered.headers['set-cookie']).split(';')[0];
 			const headers = { origin, cookie, 'x-kucedr-cloud-csrf': registered.json().csrfToken };
 			const secondLogin = await server.inject({
-				method: 'POST', url: '/config/auth/session', headers: { origin },
+				method: 'POST',
+				url: '/config/auth/session',
+				headers: { origin },
 				payload: { username, password },
 			});
 			assert.equal(secondLogin.statusCode, 200);
@@ -50,7 +54,10 @@ test('administrator updates validate credentials, revoke sessions, and persist e
 					[{ ...headers, authorization: 'Bearer forbidden' }, 401],
 				] as const) {
 					const rejected = await server.inject({
-						method: 'PUT', url: '/config/administrator', headers: requestHeaders, payload,
+						method: 'PUT',
+						url: '/config/administrator',
+						headers: requestHeaders,
+						payload,
 					});
 					assert.equal(rejected.statusCode, expected);
 				}
@@ -63,7 +70,10 @@ test('administrator updates validate credentials, revoke sessions, and persist e
 					{ ...payload, username },
 				]) {
 					const rejected = await server.inject({
-						method: 'PUT', url: '/config/administrator', headers, payload: invalid,
+						method: 'PUT',
+						url: '/config/administrator',
+						headers,
+						payload: invalid,
 						remoteAddress: `192.0.2.${Math.floor(Math.random() * 200) + 1}`,
 					});
 					assert.equal(rejected.statusCode, 400, rejected.body);
@@ -74,9 +84,14 @@ test('administrator updates validate credentials, revoke sessions, and persist e
 			}
 
 			const responses = await Promise.all(
-				Array.from({ length: change === 'concurrent' ? 2 : 1 }, () => server.inject({
-					method: 'PUT', url: '/config/administrator', headers, payload,
-				}))
+				Array.from({ length: change === 'concurrent' ? 2 : 1 }, () =>
+					server.inject({
+						method: 'PUT',
+						url: '/config/administrator',
+						headers,
+						payload,
+					})
+				)
 			);
 			const success = responses.find((response) => response.statusCode === 204);
 			assert.ok(success, responses.map((response) => response.body).join('\n'));
@@ -96,28 +111,49 @@ test('administrator updates validate credentials, revoke sessions, and persist e
 				assert.notEqual(after.salt, before.salt);
 				assert.notEqual(after.digest, before.digest);
 			}
-			assert.equal(store.updateAdministrator(before, before, sessionHash(cookie.split('=')[1])), false);
+			assert.equal(
+				store.updateAdministrator(before, before, sessionHash(cookie.split('=')[1])),
+				false
+			);
 			for (const revokedCookie of [cookie, secondCookie]) {
 				const status = await server.inject({
-					method: 'GET', url: '/config/auth/status', headers: { origin, cookie: revokedCookie },
+					method: 'GET',
+					url: '/config/auth/status',
+					headers: { origin, cookie: revokedCookie },
 				});
 				assert.equal(status.json().authenticated, false);
 				assert.equal(status.json().csrfToken, null);
 			}
-			assert.equal((await server.inject({
-				method: 'POST', url: '/config/auth/session', headers: { origin },
-				payload: { username, password },
-			})).statusCode, 401);
-			const newPassword = change === 'password' || change === 'both' ? replacementPassword : password;
+			assert.equal(
+				(
+					await server.inject({
+						method: 'POST',
+						url: '/config/auth/session',
+						headers: { origin },
+						payload: { username, password },
+					})
+				).statusCode,
+				401
+			);
+			const newPassword =
+				change === 'password' || change === 'both' ? replacementPassword : password;
 			const freshLogin = await server.inject({
-				method: 'POST', url: '/config/auth/session', headers: { origin },
+				method: 'POST',
+				url: '/config/auth/session',
+				headers: { origin },
 				payload: { username: nextUsername.toUpperCase(), password: newPassword },
 			});
 			assert.equal(freshLogin.statusCode, 200);
 			const restarted = new ConfigurationStore(directory, key);
 			assert.deepEqual(restarted.administrator(), after);
 			const disk = fs.readFileSync(path.join(directory, 'secure-config.json'), 'utf8');
-			for (const secret of [password, replacementPassword, before.digest, after.digest, after.sessionSecret]) {
+			for (const secret of [
+				password,
+				replacementPassword,
+				before.digest,
+				after.digest,
+				after.sessionSecret,
+			]) {
 				assert.equal(disk.includes(secret), false);
 				assert.equal(success.body.includes(secret), false);
 			}
