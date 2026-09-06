@@ -24,7 +24,7 @@ import {
 import { resolveA2aConfig } from '../src/main/a2a/config';
 import { KucedrCloudExecutor, type AgentPort } from '../src/main/a2a/executor';
 import { createAgentCard } from '../src/main/a2a/card';
-import { createA2aServer } from '../src/main/a2a/server';
+import { createServers } from '../src/main/runtime';
 import { createTaskStore } from '../src/main/a2a/store';
 import type { AgentSendOptions } from '../src/main/agent/agent';
 import type { AgentResponseEvent, AgentRunStopReason } from '../src/main/shared/agent_types';
@@ -125,10 +125,10 @@ test('A2A configuration is disabled or validates paired secure settings', async 
 	}
 });
 
-test('A2A server fails closed and exposes only discovery, OAuth, config, and A2A', async () => {
+test('production separates private application routes from public OAuth and A2A', async () => {
 	const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'kucedr-cloud-a2a-only-'));
 	await assert.rejects(
-		createA2aServer(unusedAgent(), {
+		createServers(unusedAgent(), {
 			dataDirectory: directory,
 			adminToken: null,
 			configurationKey: null,
@@ -137,7 +137,7 @@ test('A2A server fails closed and exposes only discovery, OAuth, config, and A2A
 		/KUCEDR_CLOUD_ADMIN_TOKEN/
 	);
 
-	const server = await createA2aServer(unusedAgent(), {
+	const { application, a2a: server } = await createServers(unusedAgent(), {
 		dataDirectory: directory,
 		adminToken: ADMIN_TOKEN,
 		configurationKey: CONFIGURATION_KEY,
@@ -169,8 +169,7 @@ test('A2A server fails closed and exposes only discovery, OAuth, config, and A2A
 			).headers['www-authenticate'] ?? '',
 			/resource_metadata=/
 		);
-		assert.equal((await server.inject({ method: 'GET', url: '/config' })).statusCode, 403);
-		const configPage = await server.inject({
+		const configPage = await application.inject({
 			method: 'GET',
 			url: '/config',
 			headers: { accept: 'text/html' },
@@ -178,14 +177,8 @@ test('A2A server fails closed and exposes only discovery, OAuth, config, and A2A
 		assert.equal(configPage.statusCode, 302);
 		assert.equal(configPage.headers.location, '/config/register');
 		assert.equal(configPage.headers['cache-control'], 'no-store');
-		const config = await server.inject({
-			method: 'GET',
-			url: '/config',
-			headers: { authorization: `Bearer ${ADMIN_TOKEN}` },
-		});
-		assert.equal(config.statusCode, 401);
-		assert.equal(config.headers['cache-control'], 'no-store');
-		assert.ok(Number(config.headers['content-length']) > 0);
+		assert.equal((await application.inject('/a2a/tasks')).statusCode, 404);
+		assert.equal((await application.inject('/.well-known/agent-card.json')).statusCode, 404);
 		assert.equal(
 			(
 				await server.inject({
@@ -196,10 +189,21 @@ test('A2A server fails closed and exposes only discovery, OAuth, config, and A2A
 			).statusCode,
 			401
 		);
-		const root = await server.inject({ method: 'GET', url: '/' });
-		assert.equal(root.statusCode, 302);
-		assert.equal(root.headers.location, '/config/register');
 		for (const [method, url] of [
+			['GET', '/'],
+			['GET', '/config'],
+			['GET', '/config/login'],
+			['GET', '/config/register'],
+			['GET', '/config/setup'],
+			['GET', '/config/assets/config.js'],
+			['GET', '/config/auth/status'],
+			['POST', '/config/auth/register'],
+			['POST', '/config/auth/session'],
+			['DELETE', '/config/auth/session'],
+			['GET', '/config/api'],
+			['PUT', '/config/provider'],
+			['POST', '/config/clients'],
+			['GET', '/ui/fonts/inter.ttf'],
 			['GET', '/access'],
 			['GET', '/storage-test'],
 			['GET', '/ui/app.js'],
@@ -215,7 +219,7 @@ test('A2A server fails closed and exposes only discovery, OAuth, config, and A2A
 			assert.equal(response.statusCode, 404, `${method} ${url}`);
 		}
 	} finally {
-		await server.close();
+		await Promise.all([application.close(), server.close()]);
 		fs.rmSync(directory, { recursive: true, force: true });
 	}
 });
