@@ -59,6 +59,12 @@ export function registerConfigurationUiRoutes(
 	server.get('/config/assets/page.js', async (_request, reply) =>
 		reply.header('cache-control', 'no-store').type('application/javascript').send(pageScript)
 	);
+	for (const name of ['providers', 'editor']) {
+		const script = fs.readFileSync(new URL(`../../ui/${name}.js`, import.meta.url), 'utf8');
+		server.get(`/config/assets/${name}.js`, async (_request, reply) =>
+			reply.header('cache-control', 'no-store').type('application/javascript').send(script)
+		);
+	}
 	server.get('/config/assets/shell.css', async (_request, reply) =>
 		reply.header('cache-control', 'no-store').type('text/css').send(shellStyles)
 	);

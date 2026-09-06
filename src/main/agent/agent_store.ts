@@ -8,8 +8,8 @@ export function getProviderId(): string | undefined {
 	return configuredProvider()?.provider;
 }
 
-export function getModelId(): string | undefined {
-	return configuredProvider()?.model;
+export function getModelId(providerId?: string): string | undefined {
+	return configuredProvider(providerId)?.model;
 }
 
 export function getModelOptions(): Record<string, unknown> {

@@ -5,7 +5,11 @@ const pages = {
 		'Clients',
 		'Register and manage the agents that can connect to your workspace.',
 	],
-	'/config/provider': ['provider-panel', 'Provider', 'Configure the model used for agent runs.'],
+	'/config/provider': [
+		'provider-panel',
+		'Provider',
+		'Save multiple providers and choose the active model for agent runs.',
+	],
 	'/config/a2a': ['connection-panel', 'A2A Config', 'Connection settings for your calling agents.'],
 };
 

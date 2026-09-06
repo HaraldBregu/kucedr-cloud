@@ -3,7 +3,7 @@ import { providerBaseUrl } from '../provider/base';
 import { configuredProvider } from '../config/provider';
 
 export function getProvider(id: string): StoredProvider | undefined {
-	const configured = configuredProvider();
+	const configured = configuredProvider(id.trim());
 	if (!configured || id.trim() !== configured.provider) return undefined;
 	return {
 		id: configured.provider,

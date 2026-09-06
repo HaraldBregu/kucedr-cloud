@@ -112,7 +112,7 @@ export class Agent {
 		const sessionId = resolveSessionId(options.sessionId, this.config.location, category);
 		const runId = options.runId ?? randomUUID();
 		const pinnedProviderId = options.providerId?.trim() || getProviderId();
-		const pinnedModelId = (options.model ?? options.modelId)?.trim() || getModelId();
+		const pinnedModelId = (options.model ?? options.modelId)?.trim() || getModelId(pinnedProviderId);
 		const commandOptions: InternalAgentSendOptions = {
 			...options,
 			sessionId,

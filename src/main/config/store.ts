@@ -114,7 +114,7 @@ export class ConfigurationStore {
 		return providerCollection(unseal(this.document.provider, this.encryptionKey, 'provider'));
 	}
 
-	provider(id?: ProviderId): ProviderConfiguration | undefined {
+	provider(id?: string): ProviderConfiguration | undefined {
 		const collection = this.providers();
 		return collection.configurations.find(
 			(provider) => provider.provider === (id ?? collection.active)

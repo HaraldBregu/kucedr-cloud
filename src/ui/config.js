@@ -1,4 +1,6 @@
 import { showPage } from './page.js';
+import { renderProviders } from './providers.js';
+import { renderProviderEditor } from './editor.js';
 
 const elements = Object.fromEntries(
 	[
@@ -28,6 +30,8 @@ const elements = Object.fromEntries(
 
 let csrf = '';
 let currentUsername = '';
+let savedProviders = [];
+let configurationLoaded = false;
 
 async function request(path, options = {}) {
 	const headers = { accept: 'application/json', ...options.headers };
@@ -108,17 +112,19 @@ function renderConfiguration(configuration) {
 	const provider = configuration.provider;
 	document.getElementById('provider-guidance').textContent = provider.configured
 		? 'Your provider is configured. Manage clients and review A2A connection settings.'
-		: 'Connect a model provider to enable agent runs. You can configure clients at any time.';
+		: configuration.providers.length
+			? 'Choose an active provider on the Provider page to enable agent runs.'
+			: 'Connect a model provider to enable agent runs. You can configure clients at any time.';
 	elements['provider-status'].textContent = provider.configured
 		? `${provider.provider} / ${provider.model}`
 		: 'Not configured';
 	elements['client-count'].textContent = String(configuration.clients.length);
-	document.getElementById('provider').value = provider.provider || 'openai';
-	document.getElementById('model').value = provider.model || '';
-	elements['api-key-helper'].textContent = provider.hasApiKey
-		? 'Leave blank to keep the saved API key.'
-		: 'Required for the selected provider.';
-	elements['delete-provider'].disabled = !provider.configured;
+	if (!configurationLoaded)
+		document.getElementById('provider').value = provider.provider || 'openai';
+	configurationLoaded = true;
+	savedProviders = configuration.providers;
+	renderProviders(savedProviders);
+	renderProviderEditor(savedProviders);
 	elements['oauth-issuer'].textContent = configuration.oauth.issuer;
 	elements['oauth-token'].textContent = configuration.oauth.tokenEndpoint;
 	elements['oauth-resource'].textContent = configuration.oauth.resource;
@@ -195,6 +201,28 @@ elements['logout-button'].addEventListener('click', async () => {
 	}
 });
 
+document
+	.getElementById('provider')
+	.addEventListener('change', () => renderProviderEditor(savedProviders));
+
+document.getElementById('provider-rows').addEventListener('click', async (event) => {
+	const button = event.target.closest('button[data-provider]');
+	if (!button) return;
+	button.disabled = true;
+	try {
+		await request('/config/provider/active', {
+			method: 'PUT',
+			body: JSON.stringify({ provider: button.dataset.provider }),
+		});
+		await loadConfiguration();
+		showNotice('Active provider updated. New agent runs will use this provider.');
+	} catch (error) {
+		showNotice(error.message, 'error');
+	} finally {
+		button.disabled = false;
+	}
+});
+
 elements['provider-form'].addEventListener('submit', async (event) => {
 	event.preventDefault();
 	const form = event.currentTarget;
@@ -208,18 +236,23 @@ elements['provider-form'].addEventListener('submit', async (event) => {
 		showNotice(error.message, 'error');
 	} finally {
 		setBusy(form, false);
+		elements['delete-provider'].disabled = !savedProviders.some(
+			(provider) => provider.provider === document.getElementById('provider').value
+		);
 	}
 });
 
 elements['delete-provider'].addEventListener('click', async () => {
 	if (
 		!window.confirm(
-			'Remove the provider configuration? Agent runs will stop until another provider is configured.'
+			'Remove the selected provider? If it is active, choose another saved provider before starting new agent runs.'
 		)
 	)
 		return;
 	try {
-		await request('/config/provider', { method: 'DELETE' });
+		await request(`/config/provider/${document.getElementById('provider').value}`, {
+			method: 'DELETE',
+		});
 		await loadConfiguration();
 		showNotice('Provider configuration removed.');
 	} catch (error) {

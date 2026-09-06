@@ -1,13 +1,13 @@
-import { PROVIDERS, type ProviderId } from '../provider/types';
+import { PROVIDERS, type ProviderId, type ProviderConfiguration } from '../provider/types';
 import type { ProviderCollection } from './types';
 
 export function providerCollection(value: unknown): ProviderCollection {
 	if (!value || typeof value !== 'object' || Array.isArray(value)) {
 		throw new Error('The encrypted provider configuration is invalid.');
 	}
-	const stored = value as Partial<ProviderCollection> & { provider?: ProviderId };
-	const collection = stored.provider
-		? { active: stored.provider, configurations: [stored] }
+	const stored = value as Partial<ProviderCollection & ProviderConfiguration>;
+	const collection: Partial<ProviderCollection> = stored.provider
+		? { active: stored.provider, configurations: [stored as ProviderConfiguration] }
 		: stored;
 	if (
 		!Array.isArray(collection.configurations) ||

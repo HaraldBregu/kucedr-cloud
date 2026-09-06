@@ -96,7 +96,7 @@ async function* loop(
 	options: StreamOptions
 ): AsyncGenerator<RuntimeEvent> {
 	const provider = getResolvedProvider(input.providerId ?? getProviderId());
-	const modelId = input.model ?? getModelId();
+	const modelId = input.model ?? getModelId(provider?.id);
 	const modelOptions = getModelOptions();
 	const contextMode = input.contextMode;
 	const runId = input.runId ?? session.id;
