@@ -16,13 +16,12 @@ const sharedStyles = fs.readFileSync(new URL('../../ui/styles.css', import.meta.
 export function registerConfigurationUiRoutes(
 	server: FastifyInstance,
 	store: ConfigurationStore,
-	adminToken: string,
 	publicUrl: string,
 	issuer: OAuthIssuer,
 	limiter: RequestLimiter
 ): void {
 	registerFontRoutes(server);
-	const authenticate = createConfigurationAuthentication(store, adminToken, publicUrl, limiter);
+	const authenticate = createConfigurationAuthentication(store, publicUrl, limiter);
 	const sendPage = (reply: FastifyReply) =>
 		reply
 			.header('cache-control', 'no-store')
@@ -51,8 +50,8 @@ export function registerConfigurationUiRoutes(
 	);
 	server.get('/config', async (request, reply) => {
 		if (request.headers.accept?.toLowerCase().includes('text/html')) {
-			const principal = configurationPrincipal(request, store, adminToken, publicUrl);
-			if (principal?.method !== 'ui-session') {
+			const principal = configurationPrincipal(request, store, publicUrl);
+			if (!principal) {
 				return reply
 					.header('cache-control', 'no-store')
 					.header('vary', 'Accept')
@@ -74,7 +73,7 @@ export function registerConfigurationUiRoutes(
 		reply.header('cache-control', 'no-store').send(configurationResponse(store, issuer))
 	);
 	server.get('/config/register', async (request, reply) => {
-		if (configurationPrincipal(request, store, adminToken, publicUrl)?.method === 'ui-session') {
+		if (configurationPrincipal(request, store, publicUrl)) {
 			return reply
 				.header('cache-control', 'no-store')
 				.redirect(store.provider() ? '/config' : '/config/setup');
@@ -85,7 +84,7 @@ export function registerConfigurationUiRoutes(
 		return sendPage(reply);
 	});
 	server.get('/config/login', async (request, reply) => {
-		if (configurationPrincipal(request, store, adminToken, publicUrl)?.method === 'ui-session') {
+		if (configurationPrincipal(request, store, publicUrl)) {
 			return reply
 				.header('cache-control', 'no-store')
 				.redirect(store.provider() ? '/config' : '/config/setup');
@@ -96,7 +95,7 @@ export function registerConfigurationUiRoutes(
 		return sendPage(reply);
 	});
 	server.get('/config/setup', async (request, reply) => {
-		if (configurationPrincipal(request, store, adminToken, publicUrl)?.method !== 'ui-session') {
+		if (!configurationPrincipal(request, store, publicUrl)) {
 			return reply
 				.header('cache-control', 'no-store')
 				.redirect(store.administrator() ? '/config/login' : '/config/register');
