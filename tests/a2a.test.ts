@@ -169,7 +169,7 @@ test('A2A server fails closed and exposes only discovery, OAuth, config, and A2A
 			).headers['www-authenticate'] ?? '',
 			/resource_metadata=/
 		);
-		assert.equal((await server.inject({ method: 'GET', url: '/config' })).statusCode, 401);
+		assert.equal((await server.inject({ method: 'GET', url: '/config' })).statusCode, 403);
 		const configPage = await server.inject({
 			method: 'GET',
 			url: '/config',
@@ -183,7 +183,7 @@ test('A2A server fails closed and exposes only discovery, OAuth, config, and A2A
 			url: '/config',
 			headers: { authorization: `Bearer ${ADMIN_TOKEN}` },
 		});
-		assert.equal(config.statusCode, 200);
+		assert.equal(config.statusCode, 401);
 		assert.equal(config.headers['cache-control'], 'no-store');
 		assert.ok(Number(config.headers['content-length']) > 0);
 		assert.equal(

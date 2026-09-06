@@ -83,17 +83,31 @@ test('the official A2A REST client discovers kucedr-cloud and streams continuous
 			method: 'POST',
 			headers: { origin: baseUrl, 'content-type': 'application/json' },
 			body: JSON.stringify({
+				setupToken: adminToken,
 				username: 'administrator',
 				password: 'correct horse battery staple',
 			}),
 		});
 		assert.equal(administrator.status, 201);
+		const session = (await administrator.json()) as { csrfToken: string };
+		const cookie = administrator.headers.get('set-cookie')?.split(';', 1)[0];
+		assert.ok(cookie);
+		const adminHeaders = {
+			cookie,
+			origin: baseUrl,
+			'content-type': 'application/json',
+			'x-kucedr-cloud-csrf': session.csrfToken,
+		};
+		assert.equal((await fetch(`${baseUrl}/a2a/tasks`, { headers: { cookie } })).status, 401);
+		assert.equal(
+			(await fetch(`${baseUrl}/a2a/tasks`, {
+				headers: { authorization: `Bearer ${adminToken}` },
+			})).status,
+			401
+		);
 		const configuredProvider = await fetch(`${baseUrl}/config/provider`, {
 			method: 'PUT',
-			headers: {
-				authorization: `Bearer ${adminToken}`,
-				'content-type': 'application/json',
-			},
+			headers: adminHeaders,
 			body: JSON.stringify({ provider: 'openai', model: 'test-model', apiKey: providerSecret }),
 		});
 		assert.equal(configuredProvider.status, 200);
@@ -139,10 +153,7 @@ test('the official A2A REST client discovers kucedr-cloud and streams continuous
 		const privateKey = pair.privateKey.export({ format: 'jwk' }) as JWK;
 		const registered = await fetch(`${baseUrl}/config/clients`, {
 			method: 'POST',
-			headers: {
-				authorization: `Bearer ${adminToken}`,
-				'content-type': 'application/json',
-			},
+			headers: adminHeaders,
 			body: JSON.stringify({ name: 'official-sdk-test', publicKeyJwk: publicKey }),
 		});
 		assert.equal(registered.status, 201);
@@ -308,7 +319,7 @@ test('the official A2A REST client discovers kucedr-cloud and streams continuous
 
 		const revoked = await fetch(`${baseUrl}/config/clients/${registration.clientId}`, {
 			method: 'DELETE',
-			headers: { authorization: `Bearer ${adminToken}` },
+			headers: { cookie, origin: baseUrl, 'x-kucedr-cloud-csrf': session.csrfToken },
 		});
 		assert.equal(revoked.status, 200);
 		assert.deepEqual(await revoked.json(), { deleted: true });
