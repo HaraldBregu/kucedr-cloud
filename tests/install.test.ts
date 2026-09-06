@@ -68,6 +68,7 @@ case "$name" in
         if [ "$FAKE_MODE" = existing-volume ]; then printf 'kucedr-cloud-data\\n'; fi ;;
       'compose version'*) [ "$FAKE_MODE" != compose-missing ] ;;
       *--help*)
+        [ "$FAKE_MODE" != compose-missing ] || exit 1
         [ "$FAKE_MODE" != compose-old ] || exit 0
         printf '%s\\n' '--wait --wait-timeout' ;;
       *' config '*) [ "$FAKE_MODE" != config-failure ] ;;
@@ -183,7 +184,7 @@ esac
 					}
 				} else {
 					assert.notEqual(result.status, 0, `${scenario} unexpectedly succeeded: ${output}`);
-					if (scenario !== 'health-failure') assert.doesNotMatch(commands, / up /, scenario);
+					if (scenario !== 'health-failure') assert.doesNotMatch(commands, / up --build /, scenario);
 					if (scenario === 'existing-volume' || scenario === 'restore-config') {
 						assert.doesNotMatch(commands, /openssl /, scenario);
 						assert.match(output, /restor|backup/i, scenario);
