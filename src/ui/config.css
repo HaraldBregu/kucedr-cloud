@@ -87,6 +87,8 @@ td:first-child {
 .application-layout.authenticated {
 	display: grid;
 	grid-template-columns: 200px minmax(0, 1fr);
+	min-height: 0;
+	overflow-y: auto;
 }
 
 .application-layout .config-shell {
@@ -104,7 +106,7 @@ td:first-child {
 
 .sidebar nav {
 	position: sticky;
-	top: 104px;
+	top: 28px;
 	display: grid;
 	gap: 8px;
 }

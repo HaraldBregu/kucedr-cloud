@@ -3,8 +3,16 @@ body {
 	flex-direction: column;
 }
 
+body:has(.application-layout.authenticated) {
+	height: 100vh;
+	height: 100dvh;
+	min-height: 0;
+	overflow: hidden;
+}
+
 .site-header,
 .site-footer {
+	flex-shrink: 0;
 	width: min(1320px, calc(100% - 48px));
 	margin-inline: auto;
 	border: 1px solid var(--border);
