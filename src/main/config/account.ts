@@ -57,11 +57,9 @@ export function registerAdministratorRoutes(
 				newPassword &&
 				(newPassword.length < 12 || Buffer.byteLength(newPassword, 'utf8') > 1024)
 			) {
-				return reply
-					.code(400)
-					.send({
-						error: 'Password must contain at least 12 characters and at most 1024 UTF-8 bytes.',
-					});
+				return reply.code(400).send({
+					error: 'Password must contain at least 12 characters and at most 1024 UTF-8 bytes.',
+				});
 			}
 			const currentDigest = await hashPassword(request.body.currentPassword, administrator.salt);
 			if (!equalText(currentDigest, administrator.digest)) {
