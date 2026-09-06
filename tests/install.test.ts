@@ -28,14 +28,10 @@ test('server installer handles piped installation, recovery, and failures withou
 			writeFileSync(path.join(source, file), readFileSync(path.join(repo, file)));
 		}
 		const archive = path.join(root, 'source.tar.gz');
-		assert.equal(
-			spawnSync('tar', ['-czf', archive, '-C', root, path.basename(source)]).status,
-			0
-		);
+		assert.equal(spawnSync('tar', ['-czf', archive, '-C', root, path.basename(source)]).status, 0);
 		const partial = path.join(root, 'partial.tar.gz');
 		assert.equal(
-			spawnSync('tar', ['-czf', partial, '-C', root, `${path.basename(source)}/Dockerfile`])
-				.status,
+			spawnSync('tar', ['-czf', partial, '-C', root, `${path.basename(source)}/Dockerfile`]).status,
 			0
 		);
 		const mock = `#!/bin/sh
@@ -128,7 +124,8 @@ esac
 				FAKE_LOG: log,
 				FAKE_ARCHIVE: scenario === 'partial-archive' ? partial : archive,
 				FAKE_MODE: scenario,
-				FAKE_ARCH: scenario === 'arm64' ? 'aarch64' : scenario === 'unsupported-arch' ? 'i686' : 'x86_64',
+				FAKE_ARCH:
+					scenario === 'arm64' ? 'aarch64' : scenario === 'unsupported-arch' ? 'i686' : 'x86_64',
 				FAKE_ENDPOINT: scenario === 'remote-daemon' ? 'ssh://remote.example.com' : undefined,
 			};
 			if (scenario === 'missing-url') delete environment.KUCEDR_CLOUD_PUBLIC_URL;
@@ -154,7 +151,9 @@ esac
 				});
 				const output = result.stdout + result.stderr;
 				const commands = readFileSync(log, 'utf8');
-				const success = ['fresh', 'arm64', 'rerun'].includes(scenario) || (scenario === 'restore-config' && attempt === 0);
+				const success =
+					['fresh', 'arm64', 'rerun'].includes(scenario) ||
+					(scenario === 'restore-config' && attempt === 0);
 				assert.ifError(result.error);
 				assert.doesNotMatch(output, new RegExp(`${key}|must-not-override-generated-key`), scenario);
 				if (success) {
@@ -164,7 +163,10 @@ esac
 					assert.match(config, new RegExp(`KUCEDR_CLOUD_ENCRYPTION_KEY=['"]?${key}`));
 					assert.match(config, /KUCEDR_CLOUD_BIND_ADDRESS=['"]?127\.0\.0\.1/);
 					assert.equal(statSync(path.join(install, '.env')).mode & 0o777, 0o600);
-					assert.equal(readFileSync(path.join(install, '.kucedr-revision'), 'utf8').trim(), revision);
+					assert.equal(
+						readFileSync(path.join(install, '.kucedr-revision'), 'utf8').trim(),
+						revision
+					);
 					assert.match(commands, /config --quiet/);
 					assert.match(commands, /run --rm --no-deps -T app node/);
 					assert.match(commands, /up --build --wait --wait-timeout 180 -d/);
@@ -173,7 +175,10 @@ esac
 						assert.equal(config, previousConfig);
 						assert.doesNotMatch(commands, /curl |openssl /);
 					} else {
-						assert.match(commands, new RegExp(`codeload.github.com/HaraldBregu/kucedr-cloud/tar.gz/${revision}`));
+						assert.match(
+							commands,
+							new RegExp(`codeload.github.com/HaraldBregu/kucedr-cloud/tar.gz/${revision}`)
+						);
 						previousConfig = config;
 					}
 				} else {
