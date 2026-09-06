@@ -232,7 +232,6 @@ elements['save-mcp'].addEventListener('click', async () => {
 	}
 });
 
-
 elements['provider-select'].addEventListener('change', () => {
 	const placeholders = {
 		anthropic: 'claude-sonnet-4-5',
