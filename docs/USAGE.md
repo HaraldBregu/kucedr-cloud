@@ -13,7 +13,79 @@ You need:
 
 Forward the public HTTPS reverse proxy to the A2A listener only. Keep the application listener private as described under [API boundaries](#understand-the-api-boundaries).
 
-## Configure and start kucedr-cloud
+## Install with the server script
+
+The installer supports Linux amd64 and arm64 servers with `curl`, `tar`, `openssl`, and the usual shell utilities. Install Docker Engine and the Docker Compose plugin first, and ensure the current user can access the local Docker daemon. Compose must support `up --wait` and `--wait-timeout`. Remote Docker contexts are not supported.
+
+Run this command on the server after `kucedr.app` has been connected to the website deployment:
+
+```sh
+curl -fsSL https://kucedr.app/install.sh | sh
+```
+
+Until the website URL is available, use the same script directly from this repository:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/HaraldBregu/kucedr-cloud/main/scripts/install.sh | sh
+```
+
+The script prompts for the public A2A origin, such as `https://agent.example.com`. It reads the prompt from the terminal, so it also works when the script arrives through a pipe. For unattended installation, provide the origin to `sh`, not to `curl`:
+
+```sh
+curl -fsSL https://kucedr.app/install.sh |
+  KUCEDR_CLOUD_PUBLIC_URL=https://agent.example.com sh
+```
+
+The default installation directory is `/opt/kucedr-cloud` when running as root or `$HOME/.local/share/kucedr-cloud` otherwise. To select another absolute path:
+
+```sh
+curl -fsSL https://kucedr.app/install.sh |
+  KUCEDR_CLOUD_PUBLIC_URL=https://agent.example.com \
+  KUCEDR_CLOUD_INSTALL_DIR=/srv/kucedr-cloud sh
+```
+
+The current user must be able to write that directory. The installer does not install system packages, request elevated privileges, or change DNS, firewall rules, or reverse proxies.
+
+Installation downloads the server source pinned in `scripts/install.sh`, builds the Docker image, creates `.env` with permissions `0600` and a random 32-byte encryption key, then waits up to 180 seconds for container health after building. The installed source revision is recorded in `.kucedr-revision`. The older `v1.0.x` repository tags belong to the desktop application and are not used for server installation.
+
+Back up `.env` securely, particularly its exact encryption key. Forward your public HTTPS proxy only to `127.0.0.1:3000`. The health check confirms local container readiness; it does not verify your public DNS, certificate, or proxy configuration. Keep administration at `127.0.0.1:3001` and use the [SSH tunnel and browser registration workflow](#create-the-administrator). Configure the model provider after registration.
+
+### Rerun or recover an installation
+
+Rerunning with the same installation directory resumes the installed source version. It keeps `.env`, the encryption key, and the persistent data volume. Environment variables supplied to a rerun do not override an existing `.env`; edit that file deliberately if the deployment settings need to change. Rerunning does not upgrade the application.
+
+The installer refuses to overwrite an unrelated directory or create a replacement encryption key when `kucedr-cloud-data` already exists without its original `.env`. Restore the original configuration before continuing. Only one installation per Docker daemon is supported because the Compose project and data volume have fixed names; a different directory does not create an independent instance.
+
+Failed downloads are cleaned up. Build or startup failures retain the installed source and configuration for diagnosis. From the installation directory, run:
+
+```sh
+docker compose logs app
+docker compose ps
+docker compose restart app
+```
+
+After correcting a missing dependency, configuration error, or occupied port, rerun the installer with the same directory. An interrupted process normally removes its installation lock. If a forced termination leaves `<installation-directory>.lock`, remove that empty directory only after confirming no installer is still running. Do not delete the data volume as a repair step.
+
+### Publish or update the installer
+
+The maintained script is `scripts/install.sh` in this repository. The separate `kucedr-web` Vercel project redirects `/install.sh` to the raw GitHub URL for a verified installer commit. A temporary HTTP redirect works with `curl -L` and avoids maintaining a second script copy. No route is added to the application's A2A or administration listeners.
+
+To publish an installer revision:
+
+1. Validate the script and pinned application snapshot, then commit and push the installer.
+2. Point the website's `/install.sh` redirect at that full installer commit SHA and deploy the website.
+3. Associate `kucedr.app` with that Vercel project and configure the DNS records Vercel specifies.
+4. Download the published script without executing it, compare it with the verified script, and check its syntax:
+
+```sh
+curl -fsSL https://kucedr.app/install.sh -o /tmp/kucedr-install.sh
+sh -n /tmp/kucedr-install.sh
+cmp scripts/install.sh /tmp/kucedr-install.sh
+```
+
+The installer commit and the application snapshot are separate pins. To release newer application code for fresh installations, update the script's `revision` to a tested server commit and repeat publication. Existing installations retain their installed source when the script is rerun.
+
+## Configure and start kucedr-cloud manually
 
 Clone the repository and create the local environment file:
 
