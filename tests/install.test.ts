@@ -184,7 +184,8 @@ esac
 					}
 				} else {
 					assert.notEqual(result.status, 0, `${scenario} unexpectedly succeeded: ${output}`);
-					if (scenario !== 'health-failure') assert.doesNotMatch(commands, / up --build /, scenario);
+					if (scenario !== 'health-failure')
+						assert.doesNotMatch(commands, / up --build /, scenario);
 					if (scenario === 'existing-volume' || scenario === 'restore-config') {
 						assert.doesNotMatch(commands, /openssl /, scenario);
 						assert.match(output, /restor|backup/i, scenario);
