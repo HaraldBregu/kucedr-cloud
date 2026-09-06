@@ -2,12 +2,15 @@ import { createHash, generateKeyPairSync, randomUUID } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { importJWK, type JWK } from 'jose';
-import { PROVIDERS, type ProviderConfiguration, type ProviderId } from '../provider/types';
+import type { ProviderConfiguration, ProviderId } from '../provider/types';
+import { publicProvider } from '../provider/public';
+import { providerCollection } from './collection';
 import { seal } from './seal';
 import type {
 	AdministratorCredentials,
 	ConfigurationSession,
 	PublicConfiguration,
+	ProviderCollection,
 	SealedValue,
 	StoredClient,
 	StoredConfiguration,
@@ -95,51 +98,60 @@ export class ConfigurationStore {
 	}
 
 	publicConfiguration(): PublicConfiguration {
-		const provider = this.provider();
+		const collection = this.providers();
 		return {
 			clients: this.document.clients.map(({ publicKey: _publicKey, ...client }) => ({ ...client })),
-			provider: provider
-				? {
-						configured: true,
-						hasApiKey: true,
-						provider: provider.provider,
-						model: provider.model,
-					}
-				: { configured: false, hasApiKey: false, provider: null, model: null },
+			provider: publicProvider(this.provider()),
+			providers: collection.configurations.map((provider) => ({
+				...publicProvider(provider),
+				active: provider.provider === collection.active,
+			})),
 		};
 	}
 
-	provider(): ProviderConfiguration | undefined {
-		if (!this.document.provider) return undefined;
-		const value = unseal(this.document.provider, this.encryptionKey, 'provider');
-		if (!value || typeof value !== 'object' || Array.isArray(value)) {
-			throw new Error('The encrypted provider configuration is invalid.');
-		}
-		const provider = value as Partial<ProviderConfiguration>;
-		if (
-			!PROVIDERS.includes(provider.provider as ProviderId) ||
-			typeof provider.model !== 'string' ||
-			!provider.model.trim() ||
-			typeof provider.apiKey !== 'string' ||
-			!provider.apiKey.trim()
-		) {
-			throw new Error('The encrypted provider configuration is invalid.');
-		}
-		return {
-			provider: provider.provider as ProviderId,
-			model: provider.model.trim(),
-			apiKey: provider.apiKey.trim(),
-		};
+	providers(): ProviderCollection {
+		if (!this.document.provider) return { active: null, configurations: [] };
+		return providerCollection(unseal(this.document.provider, this.encryptionKey, 'provider'));
+	}
+
+	provider(id?: ProviderId): ProviderConfiguration | undefined {
+		const collection = this.providers();
+		return collection.configurations.find(
+			(provider) => provider.provider === (id ?? collection.active)
+		);
 	}
 
 	setProvider(provider: ProviderConfiguration): void {
-		this.document.provider = seal(provider, this.encryptionKey, 'provider');
+		const collection = this.providers();
+		if (!collection.configurations.length) collection.active = provider.provider;
+		const index = collection.configurations.findIndex(
+			(saved) => saved.provider === provider.provider
+		);
+		if (index === -1) collection.configurations.push(provider);
+		else collection.configurations[index] = provider;
+		this.document.provider = seal(collection, this.encryptionKey, 'provider');
 		this.write();
 	}
 
-	deleteProvider(): boolean {
-		if (!this.document.provider) return false;
-		delete this.document.provider;
+	activateProvider(id: ProviderId): boolean {
+		const collection = this.providers();
+		if (!collection.configurations.some((provider) => provider.provider === id)) return false;
+		collection.active = id;
+		this.document.provider = seal(collection, this.encryptionKey, 'provider');
+		this.write();
+		return true;
+	}
+
+	deleteProvider(id?: ProviderId): boolean {
+		const collection = this.providers();
+		const selected = id ?? collection.active;
+		const remaining = collection.configurations.filter(
+			(provider) => provider.provider !== selected
+		);
+		if (remaining.length === collection.configurations.length) return false;
+		if (collection.active === selected) collection.active = null;
+		collection.configurations = remaining;
+		this.document.provider = seal(collection, this.encryptionKey, 'provider');
 		this.write();
 		return true;
 	}

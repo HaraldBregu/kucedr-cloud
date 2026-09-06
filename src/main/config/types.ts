@@ -1,5 +1,9 @@
 import type { JWK } from 'jose';
-import type { ProviderConfiguration } from '../provider/types';
+import type {
+	ProviderConfiguration,
+	ProviderId,
+	PublicProviderConfiguration,
+} from '../provider/types';
 
 export interface SealedValue {
 	iv: string;
@@ -54,7 +58,13 @@ export interface OAuthConfiguration {
 	tokenEndpointAuthMethod: 'private_key_jwt';
 }
 
+export interface ProviderCollection {
+	active: ProviderId | null;
+	configurations: ProviderConfiguration[];
+}
+
 export interface PublicConfiguration {
+	providers: Array<PublicProviderConfiguration & { active: boolean }>;
 	clients: Array<Omit<StoredClient, 'publicKey'>>;
 	provider: {
 		configured: boolean;
