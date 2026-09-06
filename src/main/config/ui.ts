@@ -11,6 +11,7 @@ import type { ConfigurationStore } from './store';
 const html = fs.readFileSync(new URL('../../ui/config.html', import.meta.url), 'utf8');
 const script = fs.readFileSync(new URL('../../ui/config.js', import.meta.url), 'utf8');
 const configStyles = fs.readFileSync(new URL('../../ui/config.css', import.meta.url), 'utf8');
+const shellStyles = fs.readFileSync(new URL('../../ui/shell.css', import.meta.url), 'utf8');
 const sharedStyles = fs.readFileSync(new URL('../../ui/styles.css', import.meta.url), 'utf8');
 
 export function registerConfigurationUiRoutes(
@@ -27,7 +28,7 @@ export function registerConfigurationUiRoutes(
 			.header('cache-control', 'no-store')
 			.header(
 				'content-security-policy',
-				"default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
+				"default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
 			)
 			.header('referrer-policy', 'no-referrer')
 			.header('x-content-type-options', 'nosniff')
@@ -48,6 +49,15 @@ export function registerConfigurationUiRoutes(
 	server.get('/config/assets/config.js', async (_request, reply) =>
 		reply.header('cache-control', 'no-store').type('application/javascript').send(script)
 	);
+	server.get('/config/assets/shell.css', async (_request, reply) =>
+		reply.header('cache-control', 'no-store').type('text/css').send(shellStyles)
+	);
+	for (const name of ['icon.svg', 'favicon.svg']) {
+		const asset = fs.readFileSync(new URL(`../../ui/assets/${name}`, import.meta.url));
+		server.get(`/config/assets/${name}`, async (_request, reply) =>
+			reply.header('cache-control', 'no-store').type('image/svg+xml').send(asset)
+		);
+	}
 	server.get('/config', async (request, reply) => {
 		if (request.headers.accept?.toLowerCase().includes('text/html')) {
 			const principal = configurationPrincipal(request, store, publicUrl);

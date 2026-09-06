@@ -2,6 +2,7 @@ const elements = Object.fromEntries(
 	[
 		'notice',
 		'session-status',
+		'section-nav',
 		'logout-button',
 		'register-view',
 		'login-view',
@@ -55,6 +56,7 @@ function showView(name, username = '') {
 	elements['login-view'].hidden = name !== 'login';
 	elements['setup-view'].hidden = name !== 'setup';
 	elements['config-view'].hidden = name !== 'config';
+	elements['section-nav'].hidden = name !== 'config';
 	elements['logout-button'].hidden = !['setup', 'config'].includes(name);
 	elements['session-status'].dataset.connected = ['setup', 'config'].includes(name)
 		? 'true'
@@ -287,4 +289,5 @@ async function revokeClient(clientId, name) {
 	}
 }
 
+document.getElementById('copyright-year').textContent = String(new Date().getFullYear());
 initialize();

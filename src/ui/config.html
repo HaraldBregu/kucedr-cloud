@@ -6,22 +6,41 @@
 		<title>kucedr-cloud configuration</title>
 		<link rel="stylesheet" href="/config/assets/styles.css" />
 		<link rel="stylesheet" href="/config/assets/config.css" />
+		<link rel="stylesheet" href="/config/assets/shell.css" />
+		<link rel="icon" type="image/svg+xml" href="/config/assets/favicon.svg" />
 		<script src="/config/assets/config.js" defer></script>
 	</head>
 	<body>
-		<header class="app-header">
-			<div>
-				<p class="eyebrow">kucedr-cloud</p>
-				<h1>Configuration</h1>
-				<p class="lede">Securely connect a model provider and authorize calling agents.</p>
-			</div>
-			<div class="header-actions">
+		<a class="skip-link" href="#main-content">Skip to content</a>
+		<header class="site-header">
+			<a class="brand" href="/config" aria-label="Kucedr Cloud home">
+				<span class="brand-mark" aria-hidden="true"></span>
+				<span>Kucedr</span><span class="brand-product">Cloud</span>
+			</a>
+			<nav class="primary-nav" aria-label="Primary navigation">
+				<a href="/config" aria-current="page">Configuration</a>
+				<a href="https://kucedr.haraldbregu.com/#product" target="_blank" rel="noopener noreferrer">Product</a>
+				<a href="https://kucedr.haraldbregu.com/apps" target="_blank" rel="noopener noreferrer">Apps</a>
+				<a href="https://kucedr.haraldbregu.com/docs" target="_blank" rel="noopener noreferrer">Docs</a>
+			</nav>
+			<div class="session-actions">
 				<span class="status-badge" id="session-status">Checking session</span>
 				<button class="button button-quiet" id="logout-button" type="button" hidden>Log out</button>
 			</div>
 		</header>
 
-		<main class="app-shell config-shell">
+		<main class="app-shell config-shell" id="main-content" tabindex="-1">
+			<div class="page-heading">
+				<p class="eyebrow">Kucedr Cloud</p>
+				<h1>Configuration</h1>
+				<p class="lede">Securely connect a model provider and authorize calling agents.</p>
+			</div>
+			<nav class="section-nav" id="section-nav" aria-label="Configuration sections" hidden>
+				<a href="#overview">Overview</a>
+				<a href="#provider-panel">Provider</a>
+				<a href="#clients-panel">Calling agents</a>
+				<a href="#connection-panel">Connection details</a>
+			</nav>
 			<p class="notice" id="notice" role="status" aria-live="polite" hidden></p>
 
 			<section class="access-card auth-card" id="register-view" hidden>
@@ -130,7 +149,7 @@
 			</section>
 
 			<div id="config-view" hidden>
-				<section class="overview" aria-label="Configuration overview">
+				<section class="overview" id="overview" aria-label="Configuration overview">
 					<article class="metric-card">
 						<span class="metric-label">Provider</span
 						><strong class="metric-value" id="provider-status">Not configured</strong>
@@ -146,7 +165,7 @@
 				</section>
 
 				<div class="workspace-grid">
-					<section class="panel">
+					<section class="panel" id="provider-panel">
 						<div class="section-heading">
 							<div>
 								<p class="section-kicker">Model</p>
@@ -187,7 +206,7 @@
 						</form>
 					</section>
 
-					<section class="panel">
+					<section class="panel" id="connection-panel">
 						<div class="section-heading">
 							<div>
 								<p class="section-kicker">OAuth 2.0</p>
@@ -219,7 +238,7 @@
 					</section>
 				</div>
 
-				<section class="panel">
+				<section class="panel" id="clients-panel">
 					<div class="section-heading">
 						<div>
 							<p class="section-kicker">Calling agents</p>
@@ -264,5 +283,42 @@
 				</section>
 			</div>
 		</main>
+		<footer class="site-footer">
+			<div class="footer-grid">
+				<div class="footer-brand">
+					<a class="brand" href="/config" aria-label="Kucedr Cloud home">
+						<span class="brand-mark" aria-hidden="true"></span>
+						<span>Kucedr</span><span class="brand-product">Cloud</span>
+					</a>
+					<p>Connect your model providers.<br />Collaborate with agents.</p>
+					<a href="mailto:harald.bregu@gmail.com">Get in touch ↗</a>
+				</div>
+				<nav class="footer-links" aria-label="Product links">
+					<h2>Product</h2>
+					<a href="https://kucedr.haraldbregu.com/#product" target="_blank" rel="noopener noreferrer">Kucedr overview</a>
+					<a href="https://kucedr.haraldbregu.com/apps" target="_blank" rel="noopener noreferrer">Apps</a>
+					<a href="https://kucedr.haraldbregu.com/releases" target="_blank" rel="noopener noreferrer">Releases</a>
+				</nav>
+				<nav class="footer-links" aria-label="Resource links">
+					<h2>Resources</h2>
+					<a href="https://kucedr.haraldbregu.com/docs" target="_blank" rel="noopener noreferrer">Documentation</a>
+					<a href="https://github.com/HaraldBregu/kucedr-cloud/blob/main/docs/CLIENT.md" target="_blank" rel="noopener noreferrer">A2A integration</a>
+					<a href="https://github.com/HaraldBregu/kucedr-cloud/blob/main/docs/USAGE.md" target="_blank" rel="noopener noreferrer">Cloud setup</a>
+				</nav>
+				<nav class="footer-links" aria-label="Project links">
+					<h2>Project</h2>
+					<a href="https://github.com/HaraldBregu/kucedr-cloud" target="_blank" rel="noopener noreferrer">GitHub</a>
+					<a href="https://github.com/HaraldBregu/kucedr-cloud/blob/main/docs/SECURITY.md" target="_blank" rel="noopener noreferrer">Security</a>
+					<a href="https://github.com/HaraldBregu/kucedr-cloud/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener noreferrer">Contributing</a>
+				</nav>
+			</div>
+			<div class="footer-bottom">
+				<span>© <span id="copyright-year">2026</span> Kucedr</span>
+				<div class="footer-meta">
+					<a href="https://github.com/HaraldBregu/kucedr-cloud/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">MIT License</a>
+					<span>Built by <a href="https://haraldbregu.com" target="_blank" rel="noopener noreferrer">Harald Bregu</a></span>
+				</div>
+			</div>
+		</footer>
 	</body>
 </html>
